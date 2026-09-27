@@ -17,6 +17,7 @@
     "@mui/material": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-router-dom": "^7.18.4",
     "three": "latest"
   },
   "devDependencies": {
@@ -26,6 +27,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/react-router-dom": "^5.3.3",
     "@types/three": "latest",
     "@vitejs/plugin-react": "latest",
     "eslint": "^10.10.0",
