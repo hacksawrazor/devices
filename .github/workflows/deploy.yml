@@ -16,7 +16,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     uses: hacksawrazor/ci-cd/.github/workflows/deploy-react.yml@main
     with:
-      node-version: '20'
+      node-version: '24'
       build-command: 'npm run build'
       build-dir: 'dist'
       deploy-path: '/var/www/html/hacksaw/home'
