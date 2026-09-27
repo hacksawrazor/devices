@@ -1,3 +1,5 @@
+declare const global: any;
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddDevicePage from './AddDevicePage';
 

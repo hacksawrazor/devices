@@ -1,10 +1,7 @@
-import { TextEncoder, TextDecoder } from 'util';
-
-(global as any).TextEncoder = TextEncoder;
-(global as any).TextDecoder = TextDecoder;
-
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+declare const global: any;
 import App from './App';
 
 jest.mock('three', () => {
