@@ -1,12 +1,12 @@
-name: Deploy Home Page
+name: Deploy Devices SPA
 
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
     types:
       - closed
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       node-version: '24'
       build-command: 'npm run build'
       build-dir: 'dist'
-      deploy-path: '/var/www/html/hacksaw/home'
+      deploy-path: '/var/www/html/hacksaw/devices'
     secrets:
       SSH_HOST: ${{ secrets.SERVER_HOST_OCI }}
       SSH_USER: ${{ secrets.SERVER_USER_OCI }}

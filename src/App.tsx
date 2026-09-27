@@ -98,35 +98,6 @@ function ThreeBackground() {
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
-    // Create floating glowing geometric shapes
-    const group = new THREE.Group();
-    scene.add(group);
-
-    const geometries = [
-      new THREE.DodecahedronGeometry(2, 0),
-      new THREE.IcosahedronGeometry(2.5, 0),
-      new THREE.OctahedronGeometry(2, 0)
-    ];
-
-    const shapes = [];
-    for (let i = 0; i < 6; i++) {
-      const geom = geometries[Math.floor(Math.random() * geometries.length)];
-      const mat = new THREE.MeshBasicMaterial({
-        color: i % 2 === 0 ? 0x3b82f6 : 0x8b5cf6,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.35
-      });
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.set(
-        (Math.random() - 0.5) * 40,
-        (Math.random() - 0.5) * 30,
-        (Math.random() - 0.5) * 20
-      );
-      group.add(mesh);
-      shapes.push({ mesh, rotSpeed: { x: (Math.random() - 0.5) * 0.01, y: (Math.random() - 0.5) * 0.01 } });
-    }
-
     // Mouse movement interaction
     let mouseX = 0;
     let mouseY = 0;
@@ -151,14 +122,6 @@ function ThreeBackground() {
 
       particlesMesh.rotation.y += 0.0008;
       particlesMesh.rotation.x += 0.0004;
-
-      group.rotation.y += mouseX * 0.05;
-      group.rotation.x += mouseY * 0.05;
-
-      shapes.forEach(item => {
-        item.mesh.rotation.x += item.rotSpeed.x;
-        item.mesh.rotation.y += item.rotSpeed.y;
-      });
 
       renderer.render(scene, camera);
     };

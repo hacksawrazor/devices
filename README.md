@@ -1,2 +1,2 @@
-# home
-Home page
+# Devices
+Devices SPA
