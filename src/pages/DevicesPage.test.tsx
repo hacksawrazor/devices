@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DevicesPage from './DevicesPage';
 
@@ -43,7 +43,7 @@ describe('DevicesPage', () => {
 
     expect(await screen.findByText('No devices yet')).toBeInTheDocument();
     expect(screen.getByText('0 devices registered')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Add device' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Add device' }).length).toBeGreaterThan(0);
   });
 
   it('shows an error if the request fails', async () => {
@@ -55,29 +55,10 @@ describe('DevicesPage', () => {
     await waitFor(() => expect(screen.queryByText('Loading your connected devices…')).not.toBeInTheDocument());
   });
 
-  it('opens the add form in a popup and refreshes devices after creation', async () => {
-    const createdDevice = {
-      deviceId: 'new-lamp',
-      name: 'New lamp',
-      type: 'action.devices.types.LIGHT',
-      traits: ['action.devices.traits.OnOff'],
-      willReportState: false,
-      meta: { state: { on: false } },
-    };
-    const fetchMock = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => createdDevice })
-      .mockResolvedValueOnce({ ok: true, json: async () => [createdDevice] });
-    mockFetch(fetchMock);
-
+  it('links to the full-page add device form', async () => {
+    mockFetch(jest.fn().mockResolvedValue({ ok: true, json: async () => [] }));
     render(<MemoryRouter><DevicesPage /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Add device' }));
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'New lamp' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
-
-    expect(await screen.findByText(/Device created successfully/)).toBeInTheDocument();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(await screen.findByText('new-lamp')).toBeInTheDocument();
+    const buttons = await screen.findAllByRole('link', { name: 'Add device' });
+    expect(buttons[0]).toHaveAttribute('href', '/devices/new');
   });
 });

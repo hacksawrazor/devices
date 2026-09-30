@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-declare const global: any;
+declare const global: typeof globalThis;
 import App from './App';
 import { urls } from './config/urls';
 
@@ -26,20 +26,20 @@ describe('App routing', () => {
     expect(screen.getByText('Make the next move')).toBeInTheDocument();
   });
 
-  it('renders add-device page at /add-device', () => {
-    render(<MemoryRouter initialEntries={['/add-device']}><App /></MemoryRouter>);
-    expect(screen.getByText('Add New Device')).toBeInTheDocument();
-  });
-
   it('renders the devices page at /devices', () => {
     global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve([]) })) as unknown as typeof fetch;
     render(<MemoryRouter initialEntries={['/devices']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Your devices' })).toBeInTheDocument();
   });
 
+  it('renders the full-page add form with a link back to devices', () => {
+    render(<MemoryRouter initialEntries={['/devices/new']}><App /></MemoryRouter>);
+    expect(screen.getByText('Add New Device')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to devices' })).toHaveAttribute('href', '/devices');
+  });
+
   it('shows navigation links', () => {
     render(<MemoryRouter><App /></MemoryRouter>);
-    expect(screen.getByText('Add Device')).toBeInTheDocument();
     expect(screen.getByText('Devices')).toBeInTheDocument();
   });
 

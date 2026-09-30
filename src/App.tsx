@@ -74,11 +74,9 @@ export default function App() {
               <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
             </Link>
             <Box component="nav" sx={{ display: { xs: 'none', md: 'flex' }, gap: 4 }}>
-              <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Approach</Link>
-              <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Signal</Link>
-              <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Contact</Link>
-              <RouterLink to="/add-device" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Add Device</RouterLink>
               <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
+              <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Privacy</Link>
+              <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>About</Link>
             </Box>
             {userEmail ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -96,7 +94,7 @@ export default function App() {
 
           <Box component="main">
             <Routes>
-              <Route path="/add-device" element={<AddDevicePage />} />
+              <Route path="/devices/new" element={<AddDevicePage />} />
               <Route path="/devices" element={<DevicesPage />} />
               <Route path="/" element={<HomePage />} />
             </Routes>
