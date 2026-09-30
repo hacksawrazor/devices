@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Add, Close, DevicesOther, Refresh } from '@mui/icons-material';
 import AddDeviceForm from '../components/AddDeviceForm';
+import { urls } from '../config/urls';
 
 interface Device {
   deviceId: string;
@@ -24,8 +25,6 @@ interface Device {
   willReportState: boolean;
   meta?: { state?: { on?: boolean }; [key: string]: unknown };
 }
-
-const DEVICES_API_URL = 'https://apis.hacksaw.in/devices/api/devices';
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -37,7 +36,7 @@ export default function DevicesPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(DEVICES_API_URL, { credentials: 'include' });
+      const response = await fetch(urls.devicesApi, { credentials: 'include' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
       if (!Array.isArray(data)) throw new Error('Unexpected response from the devices API');

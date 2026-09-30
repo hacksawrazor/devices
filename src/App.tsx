@@ -1,10 +1,12 @@
 import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, Link } from '@mui/material';
 import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
 import { Routes, Route, Link as RouterLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import ThreeBackground from './components/ThreeBackground';
 import HomePage from './pages/HomePage';
 import AddDevicePage from './pages/AddDevicePage';
 import DevicesPage from './pages/DevicesPage';
+import { urls } from './config/urls';
 
 const theme = createTheme({
   palette: {
@@ -45,6 +47,21 @@ const theme = createTheme({
 });
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch(urls.userInfo, { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((userInfo: { user?: string; email?: string } | null) => {
+        if (active) setIsAuthenticated(Boolean(userInfo?.user || userInfo?.email));
+      })
+      .catch(() => {
+        if (active) setIsAuthenticated(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -63,7 +80,7 @@ export default function App() {
               <RouterLink to="/add-device" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Add Device</RouterLink>
               <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
             </Box>
-            <Button component={RouterLink} to="/add-device" variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Start a project</Button>
+            <Button href={isAuthenticated ? urls.logout : urls.login} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>{isAuthenticated ? 'Logout' : 'Login'}</Button>
           </Box>
 
           <Box component="main">

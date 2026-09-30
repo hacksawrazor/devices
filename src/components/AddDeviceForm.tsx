@@ -114,7 +114,7 @@ export default function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
 
     try {
       
-      const response = await fetch('https://apis.hacksaw.in/devices/api/devices', {
+      const response = await fetch(urls.devicesApi, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -276,3 +276,4 @@ export default function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
     </Card>
   );
 }
+import { urls } from '../config/urls';

@@ -11,6 +11,7 @@ import {
   Insights,
   Tune,
 } from '@mui/icons-material';
+import { urls } from '../config/urls';
 
 export default function HomePage() {
   return (
@@ -63,7 +64,7 @@ export default function HomePage() {
       <Box id="contact" sx={{ bgcolor: '#b8f34a', color: '#101312', px: { xs: 3, md: 6 }, py: { xs: 9, md: 13 } }}>
         <Box sx={{ maxWidth: 1240, mx: 'auto', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'start', md: 'end' }, gap: 5 }}>
           <Typography variant="h3" sx={{ fontSize: { xs: '2.6rem', md: '4.5rem' }, maxWidth: 700 }}>Have a sharp idea? Let’s make it real.</Typography>
-          <Button href="mailto:supp@hacksaw.in" variant="contained" endIcon={<ArrowOutward />} sx={{ bgcolor: '#101312', color: '#f4f7ef', px: 3, py: 1.5, whiteSpace: 'nowrap' }}>hello@hacksaw.studio</Button>
+          <Button href={urls.contactEmail} variant="contained" endIcon={<ArrowOutward />} sx={{ bgcolor: '#101312', color: '#f4f7ef', px: 3, py: 1.5, whiteSpace: 'nowrap' }}>hello@hacksaw.studio</Button>
         </Box>
       </Box>
     </>
