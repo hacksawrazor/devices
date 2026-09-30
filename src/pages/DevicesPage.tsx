@@ -7,10 +7,14 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   Typography,
 } from '@mui/material';
-import { Add, DevicesOther, Refresh } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Add, Close, DevicesOther, Refresh } from '@mui/icons-material';
+import AddDeviceForm from '../components/AddDeviceForm';
 
 interface Device {
   deviceId: string;
@@ -27,6 +31,7 @@ export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const loadDevices = async () => {
     setLoading(true);
@@ -45,7 +50,7 @@ export default function DevicesPage() {
   };
 
   useEffect(() => {
-    void loadDevices();
+    void Promise.resolve().then(() => loadDevices());
   }, []);
 
   return (
@@ -66,7 +71,7 @@ export default function DevicesPage() {
           <Button variant="outlined" startIcon={<Refresh />} onClick={() => void loadDevices()} disabled={loading} sx={{ color: '#f4f7ef', borderColor: 'rgba(244,247,239,.3)' }}>
             Refresh
           </Button>
-          <Button component={RouterLink} to="/add-device" variant="contained" startIcon={<Add />} sx={{ bgcolor: '#b8f34a', color: '#101312' }}>
+          <Button onClick={() => setAddDialogOpen(true)} variant="contained" startIcon={<Add />} sx={{ bgcolor: '#b8f34a', color: '#101312' }}>
             Add device
           </Button>
         </Box>
@@ -81,7 +86,7 @@ export default function DevicesPage() {
           <DevicesOther sx={{ fontSize: 48, color: '#62d8ff', mb: 2 }} />
           <Typography variant="h5" sx={{ mb: 1 }}>No devices yet</Typography>
           <Typography sx={{ color: 'rgba(244,247,239,.58)', mb: 3 }}>Add your first device to get started.</Typography>
-          <Button component={RouterLink} to="/add-device" variant="contained" startIcon={<Add />} sx={{ bgcolor: '#b8f34a', color: '#101312' }}>Add device</Button>
+          <Button onClick={() => setAddDialogOpen(true)} variant="contained" startIcon={<Add />} sx={{ bgcolor: '#b8f34a', color: '#101312' }}>Add device</Button>
         </Box>
       ) : (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
@@ -108,6 +113,18 @@ export default function DevicesPage() {
           ))}
         </Box>
       )}
+
+      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} fullWidth maxWidth="md" aria-labelledby="add-device-dialog-title">
+        <DialogTitle id="add-device-dialog-title" sx={{ pr: 7 }}>
+          Add a device
+          <IconButton aria-label="Close" onClick={() => setAddDialogOpen(false)} sx={{ position: 'absolute', right: 12, top: 12, color: 'text.secondary' }}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 2 } }}>
+          <AddDeviceForm onCreated={() => void loadDevices()} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

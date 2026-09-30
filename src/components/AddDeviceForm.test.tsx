@@ -1,16 +1,17 @@
-declare const global: any;
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AddDevicePage from './AddDevicePage';
+import AddDeviceForm from './AddDeviceForm';
 
-describe('AddDevicePage', () => {
+const fetchMock = jest.fn();
+
+describe('AddDeviceForm', () => {
   beforeEach(() => {
-    global.fetch = jest.fn(() =>
+    fetchMock.mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ deviceId: 'test-id', name: 'Test Light' }),
       })
-    ) as unknown as typeof fetch;
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
     localStorage.clear();
   });
 
@@ -19,7 +20,7 @@ describe('AddDevicePage', () => {
   });
 
   it('renders form title and fields', () => {
-    render(<AddDevicePage />);
+    render(<AddDeviceForm />);
     expect(screen.getByText('Add New Device')).toBeInTheDocument();
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
@@ -27,19 +28,19 @@ describe('AddDevicePage', () => {
   });
 
   it('accepts device name input', async () => {
-    render(<AddDevicePage />);
+    render(<AddDeviceForm />);
     const inputs = screen.getAllByRole('textbox');
     expect(inputs.length).toBeGreaterThan(0);
   });
 
   it('includes common traits chips', () => {
-    render(<AddDevicePage />);
+    render(<AddDeviceForm />);
     expect(screen.getByText('Quick add traits:')).toBeInTheDocument();
     expect(screen.getByText('OnOff')).toBeInTheDocument();
   });
 
   it('checks willReportState and metaStateOn', async () => {
-    render(<AddDevicePage />);
+    render(<AddDeviceForm />);
     const willReport = screen.getByLabelText('Will Report State (proactive state reporting)');
     fireEvent.click(willReport);
     expect(willReport).toBeChecked();
@@ -50,7 +51,22 @@ describe('AddDevicePage', () => {
   });
 
   it('includes submit button', () => {
-    render(<AddDevicePage />);
+    render(<AddDeviceForm />);
     expect(screen.getByText('Create Device')).toBeInTheDocument();
+  });
+
+  it('creates a device and calls onCreated after success', async () => {
+    const onCreated = jest.fn();
+    render(<AddDeviceForm onCreated={onCreated} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: expect.stringContaining('Test Light'),
+    }));
+    expect(screen.getByText(/Device created successfully/)).toBeInTheDocument();
   });
 });

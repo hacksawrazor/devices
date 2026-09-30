@@ -1,8 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DevicesPage from './DevicesPage';
 
-declare const global: any;
+const mockFetch = (implementation: jest.Mock) => {
+  globalThis.fetch = implementation as unknown as typeof fetch;
+};
 
 describe('DevicesPage', () => {
   afterEach(() => {
@@ -18,7 +20,8 @@ describe('DevicesPage', () => {
       willReportState: true,
       meta: { state: { on: true } },
     }];
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => devices });
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => devices });
+    mockFetch(fetchMock);
 
     render(<MemoryRouter><DevicesPage /></MemoryRouter>);
 
@@ -30,25 +33,51 @@ describe('DevicesPage', () => {
     expect(screen.getByText('Brightness')).toBeInTheDocument();
     expect(screen.getByText('On')).toBeInTheDocument();
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
-    expect(global.fetch).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
+    expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
   });
 
   it('shows an empty state when there are no devices', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    mockFetch(jest.fn().mockResolvedValue({ ok: true, json: async () => [] }));
 
     render(<MemoryRouter><DevicesPage /></MemoryRouter>);
 
     expect(await screen.findByText('No devices yet')).toBeInTheDocument();
     expect(screen.getByText('0 devices registered')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Add device' })[0]).toHaveAttribute('href', '/add-device');
+    expect(screen.getAllByRole('button', { name: 'Add device' }).length).toBeGreaterThan(0);
   });
 
   it('shows an error if the request fails', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) });
+    mockFetch(jest.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) }));
 
     render(<MemoryRouter><DevicesPage /></MemoryRouter>);
 
     expect(await screen.findByText('Unauthorized')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText('Loading your connected devices…')).not.toBeInTheDocument());
+  });
+
+  it('opens the add form in a popup and refreshes devices after creation', async () => {
+    const createdDevice = {
+      deviceId: 'new-lamp',
+      name: 'New lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: false,
+      meta: { state: { on: false } },
+    };
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => createdDevice })
+      .mockResolvedValueOnce({ ok: true, json: async () => [createdDevice] });
+    mockFetch(fetchMock);
+
+    render(<MemoryRouter><DevicesPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Add device' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'New lamp' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
+
+    expect(await screen.findByText(/Device created successfully/)).toBeInTheDocument();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(await screen.findByText('new-lamp')).toBeInTheDocument();
   });
 });
