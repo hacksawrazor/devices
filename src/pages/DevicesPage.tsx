@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -14,13 +13,15 @@ import { Add, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { urls } from '../config/urls';
 import type { DeviceRecord } from '../components/AddDeviceForm';
+import { useFeedback } from '../components/feedbackContext';
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showFeedback } = useFeedback();
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -30,15 +31,17 @@ export default function DevicesPage() {
       if (!Array.isArray(data)) throw new Error('Unexpected response from the devices API');
       setDevices(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load devices');
+      const message = err instanceof Error ? err.message : 'Failed to load devices';
+      setError(message);
+      showFeedback(message, 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [showFeedback]);
 
   useEffect(() => {
     void Promise.resolve().then(() => loadDevices());
-  }, []);
+  }, [loadDevices]);
 
   return (
     <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 6, md: 10 }, minHeight: '65vh' }}>
@@ -63,8 +66,6 @@ export default function DevicesPage() {
           </Button>
         </Box>
       </Box>
-
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress color="primary" /></Box>

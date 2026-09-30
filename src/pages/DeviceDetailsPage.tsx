@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Alert, Box, Button, CircularProgress } from '@mui/material';
+import { Box, Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import AddDeviceForm, { type DeviceRecord } from '../components/AddDeviceForm';
 import { urls } from '../config/urls';
+import { useFeedback } from '../components/feedbackContext';
 
 export default function DeviceDetailsPage() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function DeviceDetailsPage() {
   const [device, setDevice] = useState<DeviceRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showFeedback } = useFeedback();
 
   useEffect(() => {
     let active = true;
@@ -22,7 +24,11 @@ export default function DeviceDetailsPage() {
         if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
         if (active) setDevice(data);
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load device');
+        if (active) {
+          const message = err instanceof Error ? err.message : 'Failed to load device';
+          setError(message);
+          showFeedback(message, 'error');
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -30,7 +36,7 @@ export default function DeviceDetailsPage() {
 
     void loadDevice();
     return () => { active = false; };
-  }, [id]);
+  }, [id, showFeedback]);
 
   return (
     <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 4, md: 7 }, minHeight: '65vh' }}>
@@ -38,13 +44,17 @@ export default function DeviceDetailsPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress color="primary" /></Box>
       ) : error || !device ? (
         <Box sx={{ maxWidth: 960, mx: 'auto', mt: 4 }}>
-          <Alert severity="error" sx={{ mb: 2 }}>{error || 'Device not found'}</Alert>
           <Button onClick={() => navigate('/devices')} startIcon={<ArrowBack />} sx={{ color: 'rgba(244,247,239,.62)' }}>
             Back to devices
           </Button>
         </Box>
       ) : (
-        <AddDeviceForm device={device} onBack={() => navigate('/devices')} onDeleted={() => navigate('/devices')} />
+        <AddDeviceForm
+          device={device}
+          onBack={() => navigate('/devices')}
+          onSaved={() => navigate('/devices')}
+          onDeleted={() => navigate('/devices')}
+        />
       )}
     </Box>
   );

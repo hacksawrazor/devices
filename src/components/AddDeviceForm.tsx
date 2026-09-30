@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Alert,
   Chip,
   Box,
   Dialog,
@@ -18,6 +17,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { useFeedback } from './feedbackContext';
 
 interface DeviceFormData {
   name: string;
@@ -73,13 +73,13 @@ const COMMON_TRAITS = [
 ];
 
 export interface AddDeviceFormProps {
-  onCreated?: () => void;
+  onSaved?: () => void;
   onBack?: () => void;
   onDeleted?: () => void;
   device?: DeviceRecord;
 }
 
-export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: existingDevice }: AddDeviceFormProps) {
+export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: existingDevice }: AddDeviceFormProps) {
   const isEditing = Boolean(existingDevice);
   const [device, setDevice] = useState<DeviceFormData>(() => ({
     name: existingDevice?.name ?? '',
@@ -93,7 +93,7 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string; data?: unknown } | null>(null);
+  const { showFeedback } = useFeedback();
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -113,8 +113,6 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitResult(null);
-
     if (!validate()) return;
 
     setSubmitting(true);
@@ -145,18 +143,16 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
         },
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      setSubmitResult({ success: true, message: isEditing ? 'Device updated successfully' : 'Device created successfully', data });
-      if (isEditing) return;
-      onCreated?.();
-      setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '' });
+      showFeedback(isEditing ? 'Device updated successfully' : 'Device created successfully', 'success');
+      onSaved?.();
+      if (!isEditing && !onSaved) setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '' });
     } catch (err) {
-      setSubmitResult({ success: false, message: err instanceof Error ? err.message : 'Failed to create device' });
+      showFeedback(err instanceof Error ? err.message : 'Failed to save device', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -165,8 +161,6 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
   const handleDelete = async () => {
     if (!existingDevice) return;
     setDeleting(true);
-    setSubmitResult(null);
-
     try {
       const response = await fetch(`${urls.devicesApi}/${encodeURIComponent(existingDevice.deviceId)}`, {
         method: 'DELETE',
@@ -179,10 +173,11 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
       }
 
       setConfirmDeleteOpen(false);
+      showFeedback('Device deleted successfully', 'success');
       onDeleted?.();
     } catch (err) {
       setConfirmDeleteOpen(false);
-      setSubmitResult({ success: false, message: err instanceof Error ? err.message : 'Failed to delete device' });
+      showFeedback(err instanceof Error ? err.message : 'Failed to delete device', 'error');
     } finally {
       setDeleting(false);
     }
@@ -194,21 +189,6 @@ export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: ex
         <Typography variant="h4" gutterBottom>
           {isEditing ? 'Edit Device' : 'Add New Device'}
         </Typography>
-        {submitResult && (
-          <Alert
-            severity={submitResult.success ? 'success' : 'error'}
-            sx={{ mb: 3 }}
-            onClose={() => setSubmitResult(null)}
-          >
-            {submitResult.success ? '✓ ' : '✗ '}{submitResult.message}
-            {submitResult.data && (
-              <Box component="pre" sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', overflow: 'auto', fontSize: '0.8rem' }}>
-                {JSON.stringify(submitResult.data, null, 2)}
-              </Box>
-            )}
-          </Alert>
-        )}
-
         <form onSubmit={handleSubmit}>
           <Box sx={{ mb: 3 }}>
             <TextField

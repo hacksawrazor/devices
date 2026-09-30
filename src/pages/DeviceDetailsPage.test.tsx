@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import DeviceDetailsPage from './DeviceDetailsPage';
 import { urls } from '../config/urls';
+import FeedbackProvider from '../components/FeedbackProvider';
 
 describe('DeviceDetailsPage', () => {
   afterEach(() => {
@@ -40,12 +41,43 @@ describe('DeviceDetailsPage', () => {
     }) as unknown as typeof fetch;
 
     render(
-      <MemoryRouter initialEntries={['/devices/missing']}>
-        <Routes><Route path="/devices/:id" element={<DeviceDetailsPage />} /></Routes>
+      <FeedbackProvider>
+        <MemoryRouter initialEntries={['/devices/missing']}>
+          <Routes><Route path="/devices/:id" element={<DeviceDetailsPage />} /></Routes>
+        </MemoryRouter>
+      </FeedbackProvider>,
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Device not found');
+    expect(screen.getByRole('button', { name: 'Back to devices' })).toBeInTheDocument();
+  });
+
+  it('returns to the device list after a successful update', async () => {
+    const device = {
+      deviceId: 'lamp-7',
+      name: 'Reading lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: false,
+      meta: { state: { on: false } },
+    };
+    globalThis.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => device })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ...device, name: 'Bedside lamp' }) }) as unknown as typeof fetch;
+
+    render(
+      <MemoryRouter initialEntries={['/devices/lamp-7']}>
+        <Routes>
+          <Route path="/devices/:id" element={<DeviceDetailsPage />} />
+          <Route path="/devices" element={<h1>Device list</h1>} />
+        </Routes>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('Device not found')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Back to devices' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Edit Device' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Bedside lamp' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Device' }));
+
+    expect(await screen.findByRole('heading', { name: 'Device list' })).toBeInTheDocument();
   });
 });

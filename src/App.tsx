@@ -9,6 +9,7 @@ import DevicesPage from './pages/DevicesPage';
 import DeviceDetailsPage from './pages/DeviceDetailsPage';
 import { urls } from './config/urls';
 import { getLoginUrl } from './utils/getLoginUrl';
+import FeedbackProvider from './components/FeedbackProvider';
 
 const theme = createTheme({
   palette: {
@@ -67,6 +68,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <FeedbackProvider>
       <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', bgcolor: '#101312', color: '#f4f7ef' }}>
         <ThreeBackground />
         <Box sx={{ position: 'relative', zIndex: 1 }}>
@@ -109,6 +111,7 @@ export default function App() {
           </Box>
         </Box>
       </Box>
+      </FeedbackProvider>
     </ThemeProvider>
   );
 }

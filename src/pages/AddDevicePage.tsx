@@ -7,7 +7,7 @@ export default function AddDevicePage() {
 
   return (
     <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 4, md: 7 }, minHeight: '65vh' }}>
-      <AddDeviceForm onBack={() => navigate('/devices')} />
+      <AddDeviceForm onBack={() => navigate('/devices')} onSaved={() => navigate('/devices')} />
     </Box>
   );
 }

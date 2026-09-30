@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import AddDeviceForm from './AddDeviceForm';
 import { urls } from '../config/urls';
+import FeedbackProvider from './FeedbackProvider';
 
 const fetchMock = jest.fn();
 
@@ -79,16 +80,16 @@ describe('AddDeviceForm', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('creates a device and calls onCreated after success', async () => {
-    const onCreated = jest.fn();
-    render(<AddDeviceForm onCreated={onCreated} />);
+  it('creates a device and calls onSaved after success without showing response JSON', async () => {
+    const onSaved = jest.fn();
+    render(<FeedbackProvider><AddDeviceForm onSaved={onSaved} /></FeedbackProvider>);
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
     fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByLabelText('Will Report State (proactive state reporting)'));
     fireEvent.click(screen.getByLabelText('Initial State: On'));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
 
-    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     const [, request] = fetchMock.mock.calls[0];
     expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', expect.objectContaining({
       method: 'POST',
@@ -102,6 +103,7 @@ describe('AddDeviceForm', () => {
       meta: { state: { on: true } },
     });
     expect(screen.getByText(/Device created successfully/)).toBeInTheDocument();
+    expect(screen.queryByText('test-id')).not.toBeInTheDocument();
   });
 
   it('loads existing values and updates the device with PUT', async () => {
@@ -113,7 +115,7 @@ describe('AddDeviceForm', () => {
       willReportState: true,
       meta: { state: { on: true } },
     };
-    render(<AddDeviceForm device={existingDevice} />);
+    render(<FeedbackProvider><AddDeviceForm device={existingDevice} /></FeedbackProvider>);
 
     expect(screen.getByText('Edit Device')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Hall lamp');
@@ -135,7 +137,7 @@ describe('AddDeviceForm', () => {
 
   it('confirms and deletes an existing device', async () => {
     const onDeleted = jest.fn();
-    render(<AddDeviceForm
+    render(<FeedbackProvider><AddDeviceForm
       device={{
         deviceId: 'device-42',
         name: 'Hall lamp',
@@ -145,7 +147,7 @@ describe('AddDeviceForm', () => {
         meta: { state: { on: false } },
       }}
       onDeleted={onDeleted}
-    />);
+    /></FeedbackProvider>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete device' }));
     expect(await screen.findByRole('dialog', { name: 'Delete device?' })).toBeInTheDocument();
@@ -157,10 +159,45 @@ describe('AddDeviceForm', () => {
       method: 'DELETE',
       credentials: 'include',
     }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Device deleted successfully');
+  });
+
+  it('shows an error snackbar when an update fails', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: 'Update failed' }) });
+    render(<FeedbackProvider><AddDeviceForm device={{
+      deviceId: 'device-42',
+      name: 'Hall lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: false,
+    }} /></FeedbackProvider>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update Device' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Update failed');
+  });
+
+  it('shows an error snackbar and stays on the form when deletion fails', async () => {
+    const onDeleted = jest.fn();
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: 'Delete failed' }) });
+    render(<FeedbackProvider><AddDeviceForm device={{
+      deviceId: 'device-42',
+      name: 'Hall lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: false,
+    }} onDeleted={onDeleted} /></FeedbackProvider>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete device' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete device' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Delete failed');
+    expect(onDeleted).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Edit Device' })).toBeInTheDocument();
   });
 
   it('does not show a delete action when creating a device', () => {
-    render(<AddDeviceForm />);
+    render(<FeedbackProvider><AddDeviceForm /></FeedbackProvider>);
     expect(screen.queryByRole('button', { name: 'Delete device' })).not.toBeInTheDocument();
   });
 
@@ -170,12 +207,12 @@ describe('AddDeviceForm', () => {
       status: 500,
       json: async () => ({ error: 'Device service unavailable' }),
     });
-    render(<AddDeviceForm />);
+    render(<FeedbackProvider><AddDeviceForm /></FeedbackProvider>);
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
     fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
 
-    expect(await screen.findByText(/Device service unavailable/)).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Device service unavailable');
     expect(screen.getByRole('button', { name: 'Create Device' })).toBeEnabled();
   });
 });

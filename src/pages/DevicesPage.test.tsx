@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DevicesPage from './DevicesPage';
+import FeedbackProvider from '../components/FeedbackProvider';
 
 const mockFetch = (implementation: jest.Mock) => {
   globalThis.fetch = implementation as unknown as typeof fetch;
@@ -50,9 +51,9 @@ describe('DevicesPage', () => {
   it('shows an error if the request fails', async () => {
     mockFetch(jest.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) }));
 
-    render(<MemoryRouter><DevicesPage /></MemoryRouter>);
+    render(<FeedbackProvider><MemoryRouter><DevicesPage /></MemoryRouter></FeedbackProvider>);
 
-    expect(await screen.findByText('Unauthorized')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unauthorized');
     await waitFor(() => expect(screen.queryByText('Loading your connected devices…')).not.toBeInTheDocument());
   });
 
