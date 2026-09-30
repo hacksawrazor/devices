@@ -10,6 +10,8 @@ import DeviceDetailsPage from './pages/DeviceDetailsPage';
 import { urls } from './config/urls';
 import { getLoginUrl } from './utils/getLoginUrl';
 import FeedbackProvider from './components/FeedbackProvider';
+import { isAuthenticated, type AuthenticatedUser } from './utils/isAuthenticated';
+import AuthenticatedRoute from './components/AuthenticatedRoute';
 
 const theme = createTheme({
   palette: {
@@ -50,17 +52,25 @@ const theme = createTheme({
 });
 
 export default function App() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<AuthenticatedUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const userEmail = userInfo?.email ?? null;
 
   useEffect(() => {
     let active = true;
     fetch(urls.userInfo, { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
-      .then((userInfo: { user?: string; email?: string } | null) => {
-        if (active) setUserEmail(userInfo?.email || null);
+      .then((data: AuthenticatedUser | null) => {
+        if (active) {
+          setUserInfo(data);
+          setAuthLoading(false);
+        }
       })
       .catch(() => {
-        if (active) setUserEmail(null);
+        if (active) {
+          setUserInfo(null);
+          setAuthLoading(false);
+        }
       });
     return () => { active = false; };
   }, []);
@@ -78,11 +88,13 @@ export default function App() {
               <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
             </Link>
             <Box component="nav" sx={{ display: { xs: 'none', md: 'flex' }, gap: 4 }}>
-              <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
+              {isAuthenticated(userInfo) && (
+                <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
+              )}
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Privacy</Link>
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>About</Link>
             </Box>
-            {userEmail ? (
+            {isAuthenticated(userInfo) ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Tooltip title={userEmail} arrow>
                   <Avatar aria-label={`Signed in as ${userEmail}`} sx={{ width: 36, height: 36, bgcolor: '#b8f34a', color: '#101312', fontSize: '.85rem', fontWeight: 700, cursor: 'default' }}>
@@ -98,9 +110,9 @@ export default function App() {
 
           <Box component="main">
             <Routes>
-              <Route path="/devices/new" element={<AddDevicePage />} />
-              <Route path="/devices/:id" element={<DeviceDetailsPage />} />
-              <Route path="/devices" element={<DevicesPage />} />
+              <Route path="/devices/new" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><AddDevicePage /></AuthenticatedRoute>} />
+              <Route path="/devices/:id" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><DeviceDetailsPage /></AuthenticatedRoute>} />
+              <Route path="/devices" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><DevicesPage /></AuthenticatedRoute>} />
               <Route path="/" element={<HomePage />} />
             </Routes>
           </Box>

@@ -26,22 +26,35 @@ describe('App routing', () => {
     expect(screen.getByText('Make the next move')).toBeInTheDocument();
   });
 
-  it('renders the devices page at /devices', () => {
-    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve([]) })) as unknown as typeof fetch;
+  it('renders the devices page at /devices', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ email: 'person@example.com' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) as unknown as typeof fetch;
     render(<MemoryRouter initialEntries={['/devices']}><App /></MemoryRouter>);
-    expect(screen.getByRole('heading', { name: 'Your devices' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Your devices' })).toBeInTheDocument();
   });
 
-  it('renders the full-page add form with a back action beside submit', () => {
+  it('renders the full-page add form with a back action beside submit', async () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ email: 'person@example.com' }) })) as unknown as typeof fetch;
     render(<MemoryRouter initialEntries={['/devices/new']}><App /></MemoryRouter>);
-    expect(screen.getByText('Add New Device')).toBeInTheDocument();
+    expect(await screen.findByText('Add New Device')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Back to devices' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create Device' })).toBeInTheDocument();
   });
 
-  it('shows navigation links', () => {
+  it.each(['/devices', '/devices/new', '/devices/lamp-1'])('redirects signed-out users away from %s', async (path) => {
+    render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: /Make the next move obvious/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Login' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Your devices' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Add New Device')).not.toBeInTheDocument();
+  });
+
+  it('hides the Devices navigation link when signed out', async () => {
     render(<MemoryRouter><App /></MemoryRouter>);
-    expect(screen.getByText('Devices')).toBeInTheDocument();
+    await screen.findByRole('link', { name: 'Login' });
+    expect(screen.queryByText('Devices')).not.toBeInTheDocument();
   });
 
   it('fetches userinfo with credentials and shows Login when signed out', async () => {
@@ -60,6 +73,7 @@ describe('App routing', () => {
 
     const avatar = await screen.findByLabelText(`Signed in as ${email}`);
     expect(avatar).toHaveTextContent('AN');
+    expect(screen.getByRole('link', { name: 'Devices' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Logout' })).toHaveAttribute('href', urls.logout);
     expect(screen.queryByRole('link', { name: 'Login' })).not.toBeInTheDocument();
 
