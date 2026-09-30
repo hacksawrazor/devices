@@ -30,9 +30,10 @@ describe('FeedbackProvider', () => {
 
   it('dismisses the snackbar when its close button is clicked', async () => {
     render(<FeedbackProvider><FeedbackButtons /></FeedbackProvider>);
-    fireEvent.click(screen.getByRole('button', { name: 'Show success' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show error' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.getByRole('alert')).toHaveClass('MuiAlert-colorError');
     await waitForElementToBeRemoved(() => screen.queryByRole('alert'));
   });
 });

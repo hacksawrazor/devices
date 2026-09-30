@@ -1,30 +1,41 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Alert, Snackbar } from '@mui/material';
 import { FeedbackContext, type FeedbackSeverity } from './feedbackContext';
 
-type FeedbackMessage = { message: string; severity: FeedbackSeverity } | null;
+type FeedbackMessage = { id: number; message: string; severity: FeedbackSeverity } | null;
 
 export default function FeedbackProvider({ children }: { children: ReactNode }) {
   const [feedback, setFeedback] = useState<FeedbackMessage>(null);
+  const [open, setOpen] = useState(false);
+  const feedbackId = useRef(0);
 
   const showFeedback = useCallback((message: string, severity: FeedbackSeverity) => {
-    setFeedback({ message, severity });
+    feedbackId.current += 1;
+    setFeedback({ id: feedbackId.current, message, severity });
+    setOpen(true);
   }, []);
   const contextValue = useMemo(() => ({ showFeedback }), [showFeedback]);
+  const exitingFeedbackId = feedback?.id;
 
   return (
     <FeedbackContext.Provider value={contextValue}>
       {children}
       <Snackbar
-        open={Boolean(feedback)}
+        key={feedback?.id}
+        open={open}
         autoHideDuration={5000}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        onClose={() => setFeedback(null)}
+        onClose={() => setOpen(false)}
+        slotProps={{
+          transition: {
+            onExited: () => setFeedback((current) => current?.id === exitingFeedbackId ? null : current),
+          },
+        }}
       >
         <Alert
-          severity={feedback?.severity ?? 'success'}
+          severity={feedback?.severity ?? 'error'}
           variant="filled"
-          onClose={() => setFeedback(null)}
+          onClose={() => setOpen(false)}
           sx={{
             minWidth: 280,
             color: '#f4f7ef',
@@ -33,7 +44,7 @@ export default function FeedbackProvider({ children }: { children: ReactNode }) 
             '& .MuiAlert-icon': { color: feedback?.severity === 'error' ? '#ff7474' : '#b8f34a' },
           }}
         >
-          {feedback?.message}
+          {feedback?.message ?? ''}
         </Alert>
       </Snackbar>
     </FeedbackContext.Provider>
