@@ -1,4 +1,4 @@
-import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, Link } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, Link, Avatar, Tooltip } from '@mui/material';
 import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
 import { Routes, Route, Link as RouterLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -47,17 +47,17 @@ const theme = createTheme({
 });
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     fetch(urls.userInfo, { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
       .then((userInfo: { user?: string; email?: string } | null) => {
-        if (active) setIsAuthenticated(Boolean(userInfo?.user || userInfo?.email));
+        if (active) setUserEmail(userInfo?.email || null);
       })
       .catch(() => {
-        if (active) setIsAuthenticated(false);
+        if (active) setUserEmail(null);
       });
     return () => { active = false; };
   }, []);
@@ -80,7 +80,18 @@ export default function App() {
               <RouterLink to="/add-device" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Add Device</RouterLink>
               <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
             </Box>
-            <Button href={isAuthenticated ? urls.logout : urls.login} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>{isAuthenticated ? 'Logout' : 'Login'}</Button>
+            {userEmail ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Tooltip title={userEmail} arrow>
+                  <Avatar aria-label={`Signed in as ${userEmail}`} sx={{ width: 36, height: 36, bgcolor: '#b8f34a', color: '#101312', fontSize: '.85rem', fontWeight: 700, cursor: 'default' }}>
+                    {userEmail.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()}
+                  </Avatar>
+                </Tooltip>
+                <Button href={urls.logout} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Logout</Button>
+              </Box>
+            ) : (
+              <Button href={urls.login} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
+            )}
           </Box>
 
           <Box component="main">

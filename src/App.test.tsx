@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 declare const global: any;
 import App from './App';
+import { urls } from './config/urls';
 
 jest.mock('three', () => {
   class MockObject3D { rotation = { x: 0, y: 0 }; position = { set: jest.fn() }; }
@@ -16,6 +17,10 @@ jest.mock('three', () => {
 });
 
 describe('App routing', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) })) as unknown as typeof fetch;
+  });
+
   it('renders home page at /', () => {
     render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
     expect(screen.getByText('Make the next move')).toBeInTheDocument();
@@ -36,6 +41,28 @@ describe('App routing', () => {
     render(<MemoryRouter><App /></MemoryRouter>);
     expect(screen.getByText('Add Device')).toBeInTheDocument();
     expect(screen.getByText('Devices')).toBeInTheDocument();
+  });
+
+  it('fetches userinfo with credentials and shows Login when signed out', async () => {
+    render(<MemoryRouter><App /></MemoryRouter>);
+
+    expect(global.fetch).toHaveBeenCalledWith(urls.userInfo, { credentials: 'include' });
+    expect(await screen.findByRole('link', { name: 'Login' })).toHaveAttribute('href', urls.login);
+    expect(screen.queryByRole('img', { name: /Signed in as/ })).not.toBeInTheDocument();
+  });
+
+  it('shows an email initials avatar and Logout when signed in', async () => {
+    const email = 'ankit.sharma@example.com';
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ user: '1', email }) })) as unknown as typeof fetch;
+    render(<MemoryRouter><App /></MemoryRouter>);
+
+    const avatar = await screen.findByLabelText(`Signed in as ${email}`);
+    expect(avatar).toHaveTextContent('AN');
+    expect(screen.getByRole('link', { name: 'Logout' })).toHaveAttribute('href', urls.logout);
+    expect(screen.queryByRole('link', { name: 'Login' })).not.toBeInTheDocument();
+
+    fireEvent.mouseOver(avatar);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(email);
   });
 });
 
