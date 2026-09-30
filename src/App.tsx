@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import AddDevicePage from './pages/AddDevicePage';
 import DevicesPage from './pages/DevicesPage';
 import { urls } from './config/urls';
+import { getLoginUrl } from './utils/getLoginUrl';
 
 const theme = createTheme({
   palette: {
@@ -88,7 +89,7 @@ export default function App() {
                 <Button href={urls.logout} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Logout</Button>
               </Box>
             ) : (
-              <Button href={urls.login} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
+              <Button href={getLoginUrl()} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
             )}
           </Box>
 

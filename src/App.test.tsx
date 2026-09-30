@@ -47,7 +47,8 @@ describe('App routing', () => {
     render(<MemoryRouter><App /></MemoryRouter>);
 
     expect(global.fetch).toHaveBeenCalledWith(urls.userInfo, { credentials: 'include' });
-    expect(await screen.findByRole('link', { name: 'Login' })).toHaveAttribute('href', urls.login);
+    const loginLink = await screen.findByRole('link', { name: 'Login' });
+    expect(loginLink).toHaveAttribute('href', expect.stringContaining('/oauth2/sign_in'));
     expect(screen.queryByRole('img', { name: /Signed in as/ })).not.toBeInTheDocument();
   });
 
