@@ -32,10 +32,11 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Your devices' })).toBeInTheDocument();
   });
 
-  it('renders the full-page add form with a link back to devices', () => {
+  it('renders the full-page add form with a back action beside submit', () => {
     render(<MemoryRouter initialEntries={['/devices/new']}><App /></MemoryRouter>);
     expect(screen.getByText('Add New Device')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Back to devices' })).toHaveAttribute('href', '/devices');
+    expect(screen.getByRole('button', { name: 'Back to devices' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Device' })).toBeInTheDocument();
   });
 
   it('shows navigation links', () => {

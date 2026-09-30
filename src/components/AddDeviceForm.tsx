@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowBack } from '@mui/icons-material';
 import {
   TextField,
   Button,
@@ -61,13 +62,14 @@ const COMMON_TRAITS = [
 
 export interface AddDeviceFormProps {
   onCreated?: () => void;
+  onBack?: () => void;
 }
 
-export default function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
+export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps) {
   const [device, setDevice] = useState<DeviceFormData>({
     name: '',
     type: 'action.devices.types.LIGHT',
-    traits: COMMON_TRAITS.join(', '),
+    traits: '',
     willReportState: false,
     metaStateOn: false,
   });
@@ -141,15 +143,11 @@ export default function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
   };
 
   return (
-    <Card sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
+    <Card sx={{ maxWidth: 960, mx: 'auto', mt: 4, mb: 4 }}>
       <CardContent sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>
           Add New Device
         </Typography>
-        <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
-          Create a new smart home device. The server will generate a unique deviceId.
-        </Typography>
-
         {submitResult && (
           <Alert
             severity={submitResult.success ? 'success' : 'error'}
@@ -260,18 +258,30 @@ export default function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
             />
           </Box>
 
-          <Box sx={{ mt: 3 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={submitting}
-              startIcon={submitting ? null : undefined}
-            >
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+            {onBack ? (
+              <Button
+                type="button"
+                variant="text"
+                onClick={onBack}
+                startIcon={<ArrowBack />}
+                sx={{
+                  color: 'rgba(244,247,239,.62)',
+                  boxShadow: 'none',
+                  '&:hover': { bgcolor: 'rgba(244,247,239,.06)', boxShadow: 'none' },
+                }}
+              >
+                Back to devices
+              </Button>
+            ) : <span />}
+            <Button type="submit" variant="contained" disabled={submitting} sx={{ minWidth: { xs: 150, sm: 240 } }}>
               {submitting ? 'Creating...' : 'Create Device'}
             </Button>
           </Box>
         </form>
+        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2, textAlign: 'right', opacity: 0.7 }}>
+          The server will generate a unique deviceId.
+        </Typography>
       </CardContent>
     </Card>
   );

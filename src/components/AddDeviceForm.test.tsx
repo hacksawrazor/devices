@@ -22,6 +22,8 @@ describe('AddDeviceForm', () => {
   it('renders form title and fields', () => {
     render(<AddDeviceForm />);
     expect(screen.getByText('Add New Device')).toBeInTheDocument();
+    expect(screen.queryByText('Create a new smart home device.')).not.toBeInTheDocument();
+    expect(screen.getByText('The server will generate a unique deviceId.')).toBeInTheDocument();
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('Will Report State (proactive state reporting)')).toBeInTheDocument();
@@ -37,6 +39,19 @@ describe('AddDeviceForm', () => {
     render(<AddDeviceForm />);
     expect(screen.getByText('Quick add traits:')).toBeInTheDocument();
     expect(screen.getByText('OnOff')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Traits (comma-separated)' })).toHaveValue('');
+  });
+
+  it('adds and removes a trait when its quick-add chip is toggled', () => {
+    render(<AddDeviceForm />);
+    const traitsField = screen.getByRole('textbox', { name: 'Traits (comma-separated)' });
+    const onOffChip = screen.getByRole('button', { name: 'OnOff' });
+
+    fireEvent.click(onOffChip);
+    expect(traitsField).toHaveValue('action.devices.traits.OnOff');
+
+    fireEvent.click(onOffChip);
+    expect(traitsField).toHaveValue('');
   });
 
   it('checks willReportState and metaStateOn', async () => {
@@ -67,6 +82,7 @@ describe('AddDeviceForm', () => {
     const onCreated = jest.fn();
     render(<AddDeviceForm onCreated={onCreated} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByLabelText('Will Report State (proactive state reporting)'));
     fireEvent.click(screen.getByLabelText('Initial State: On'));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
@@ -95,6 +111,7 @@ describe('AddDeviceForm', () => {
     });
     render(<AddDeviceForm />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
 
     expect(await screen.findByText(/Device service unavailable/)).toBeInTheDocument();
