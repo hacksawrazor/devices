@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import AddDeviceForm from './AddDeviceForm';
 import { urls } from '../config/urls';
 
@@ -130,6 +130,38 @@ describe('AddDeviceForm', () => {
       credentials: 'include',
       body: expect.stringContaining('Entry lamp'),
     }));
+    expect(screen.getByRole('button', { name: 'Delete device' })).toBeInTheDocument();
+  });
+
+  it('confirms and deletes an existing device', async () => {
+    const onDeleted = jest.fn();
+    render(<AddDeviceForm
+      device={{
+        deviceId: 'device-42',
+        name: 'Hall lamp',
+        type: 'action.devices.types.LIGHT',
+        traits: ['action.devices.traits.OnOff'],
+        willReportState: false,
+        meta: { state: { on: false } },
+      }}
+      onDeleted={onDeleted}
+    />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete device' }));
+    expect(await screen.findByRole('dialog', { name: 'Delete device?' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete device' }));
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledWith(`${urls.devicesApi}/device-42`, expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include',
+    }));
+  });
+
+  it('does not show a delete action when creating a device', () => {
+    render(<AddDeviceForm />);
+    expect(screen.queryByRole('button', { name: 'Delete device' })).not.toBeInTheDocument();
   });
 
   it('shows the API error when device creation fails', async () => {

@@ -12,6 +12,11 @@ import {
   Alert,
   Chip,
   Box,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 
 interface DeviceFormData {
@@ -70,10 +75,11 @@ const COMMON_TRAITS = [
 export interface AddDeviceFormProps {
   onCreated?: () => void;
   onBack?: () => void;
+  onDeleted?: () => void;
   device?: DeviceRecord;
 }
 
-export default function AddDeviceForm({ onCreated, onBack, device: existingDevice }: AddDeviceFormProps) {
+export default function AddDeviceForm({ onCreated, onBack, onDeleted, device: existingDevice }: AddDeviceFormProps) {
   const isEditing = Boolean(existingDevice);
   const [device, setDevice] = useState<DeviceFormData>(() => ({
     name: existingDevice?.name ?? '',
@@ -85,6 +91,8 @@ export default function AddDeviceForm({ onCreated, onBack, device: existingDevic
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string; data?: unknown } | null>(null);
 
   const validate = (): boolean => {
@@ -151,6 +159,32 @@ export default function AddDeviceForm({ onCreated, onBack, device: existingDevic
       setSubmitResult({ success: false, message: err instanceof Error ? err.message : 'Failed to create device' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingDevice) return;
+    setDeleting(true);
+    setSubmitResult(null);
+
+    try {
+      const response = await fetch(`${urls.devicesApi}/${encodeURIComponent(existingDevice.deviceId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      setConfirmDeleteOpen(false);
+      onDeleted?.();
+    } catch (err) {
+      setConfirmDeleteOpen(false);
+      setSubmitResult({ success: false, message: err instanceof Error ? err.message : 'Failed to delete device' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -286,9 +320,16 @@ export default function AddDeviceForm({ onCreated, onBack, device: existingDevic
                 Back to devices
               </Button>
             ) : <span />}
-            <Button type="submit" variant="contained" disabled={submitting} sx={{ minWidth: { xs: 150, sm: 240 } }}>
-              {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Device' : 'Create Device')}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+              {isEditing && (
+                <Button type="button" color="error" variant="outlined" disabled={submitting || deleting} onClick={() => setConfirmDeleteOpen(true)}>
+                  Delete device
+                </Button>
+              )}
+              <Button type="submit" variant="contained" disabled={submitting || deleting} sx={{ minWidth: { xs: 150, sm: 240 } }}>
+                {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Device' : 'Create Device')}
+              </Button>
+            </Box>
           </Box>
         </form>
         {isEditing ? (
@@ -301,6 +342,20 @@ export default function AddDeviceForm({ onCreated, onBack, device: existingDevic
           </Typography>
         )}
       </CardContent>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} aria-labelledby="confirm-delete-title">
+        <DialogTitle id="confirm-delete-title">Delete device?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Delete {existingDevice?.name}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void handleDelete()} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete device'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }
