@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
   CircularProgress,
@@ -12,18 +13,10 @@ import {
 import { Add, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { urls } from '../config/urls';
-
-interface Device {
-  deviceId: string;
-  name: string;
-  type: string;
-  traits: string[];
-  willReportState: boolean;
-  meta?: { state?: { on?: boolean }; [key: string]: unknown };
-}
+import type { DeviceRecord } from '../components/AddDeviceForm';
 
 export default function DevicesPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -86,6 +79,7 @@ export default function DevicesPage() {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
           {devices.map((device) => (
             <Card key={device.deviceId} sx={{ minWidth: 0, bgcolor: 'rgba(24, 29, 27, .86)', border: '1px solid rgba(244,247,239,.12)' }}>
+              <CardActionArea component={RouterLink} to={`/devices/${encodeURIComponent(device.deviceId)}`} aria-label={`Edit ${device.name}`} sx={{ height: '100%' }}>
               <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 2, mb: 2 }}>
                   <Box sx={{ minWidth: 0 }}>
@@ -103,6 +97,7 @@ export default function DevicesPage() {
                   {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
                 </Typography>
               </CardContent>
+              </CardActionArea>
             </Card>
           ))}
         </Box>

@@ -6,6 +6,7 @@ import ThreeBackground from './components/ThreeBackground';
 import HomePage from './pages/HomePage';
 import AddDevicePage from './pages/AddDevicePage';
 import DevicesPage from './pages/DevicesPage';
+import DeviceDetailsPage from './pages/DeviceDetailsPage';
 import { urls } from './config/urls';
 import { getLoginUrl } from './utils/getLoginUrl';
 
@@ -96,6 +97,7 @@ export default function App() {
           <Box component="main">
             <Routes>
               <Route path="/devices/new" element={<AddDevicePage />} />
+              <Route path="/devices/:id" element={<DeviceDetailsPage />} />
               <Route path="/devices" element={<DevicesPage />} />
               <Route path="/" element={<HomePage />} />
             </Routes>

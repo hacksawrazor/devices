@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowBack } from '@mui/icons-material';
+import { urls } from '../config/urls';
 import {
   TextField,
   Button,
@@ -19,6 +20,12 @@ interface DeviceFormData {
   traits: string;
   willReportState: boolean;
   metaStateOn: boolean;
+}
+
+export interface DeviceRecord extends Omit<DeviceFormData, 'traits' | 'metaStateOn'> {
+  deviceId: string;
+  traits: string[];
+  meta?: { state?: { on?: boolean }; [key: string]: unknown };
 }
 
 interface FormErrors {
@@ -63,16 +70,18 @@ const COMMON_TRAITS = [
 export interface AddDeviceFormProps {
   onCreated?: () => void;
   onBack?: () => void;
+  device?: DeviceRecord;
 }
 
-export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps) {
-  const [device, setDevice] = useState<DeviceFormData>({
-    name: '',
-    type: 'action.devices.types.LIGHT',
-    traits: '',
-    willReportState: false,
-    metaStateOn: false,
-  });
+export default function AddDeviceForm({ onCreated, onBack, device: existingDevice }: AddDeviceFormProps) {
+  const isEditing = Boolean(existingDevice);
+  const [device, setDevice] = useState<DeviceFormData>(() => ({
+    name: existingDevice?.name ?? '',
+    type: existingDevice?.type ?? 'action.devices.types.LIGHT',
+    traits: existingDevice?.traits.join(', ') ?? '',
+    willReportState: existingDevice?.willReportState ?? false,
+    metaStateOn: existingDevice?.meta?.state?.on ?? false,
+  }));
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -116,14 +125,17 @@ export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps)
 
     try {
       
-      const response = await fetch(urls.devicesApi, {
-        method: 'POST',
+      const response = await fetch(
+        isEditing ? `${urls.devicesApi}/${encodeURIComponent(existingDevice!.deviceId)}` : urls.devicesApi,
+        {
+        method: isEditing ? 'PUT' : 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-      });
+        },
+      );
 
       const data = await response.json();
 
@@ -131,10 +143,10 @@ export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps)
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      setSubmitResult({ success: true, message: 'Device created successfully', data });
+      setSubmitResult({ success: true, message: isEditing ? 'Device updated successfully' : 'Device created successfully', data });
+      if (isEditing) return;
       onCreated?.();
-      // Reset form on success
-      setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT' });
+      setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '' });
     } catch (err) {
       setSubmitResult({ success: false, message: err instanceof Error ? err.message : 'Failed to create device' });
     } finally {
@@ -146,7 +158,7 @@ export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps)
     <Card sx={{ maxWidth: 960, mx: 'auto', mt: 4, mb: 4 }}>
       <CardContent sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Add New Device
+          {isEditing ? 'Edit Device' : 'Add New Device'}
         </Typography>
         {submitResult && (
           <Alert
@@ -275,15 +287,20 @@ export default function AddDeviceForm({ onCreated, onBack }: AddDeviceFormProps)
               </Button>
             ) : <span />}
             <Button type="submit" variant="contained" disabled={submitting} sx={{ minWidth: { xs: 150, sm: 240 } }}>
-              {submitting ? 'Creating...' : 'Create Device'}
+              {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Device' : 'Create Device')}
             </Button>
           </Box>
         </form>
-        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2, textAlign: 'right', opacity: 0.7 }}>
-          The server will generate a unique deviceId.
-        </Typography>
+        {isEditing ? (
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2, textAlign: 'right', opacity: 0.7 }}>
+            Device ID: {existingDevice?.deviceId}
+          </Typography>
+        ) : (
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2, textAlign: 'right', opacity: 0.7 }}>
+            The server will generate a unique deviceId.
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );
 }
-import { urls } from '../config/urls';

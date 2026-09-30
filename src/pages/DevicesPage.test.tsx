@@ -33,6 +33,7 @@ describe('DevicesPage', () => {
     expect(screen.getByText('Brightness')).toBeInTheDocument();
     expect(screen.getByText('On')).toBeInTheDocument();
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Edit Desk lamp' })).toHaveAttribute('href', '/devices/lamp-1');
     expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
   });
 

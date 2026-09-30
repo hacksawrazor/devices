@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddDeviceForm from './AddDeviceForm';
+import { urls } from '../config/urls';
 
 const fetchMock = jest.fn();
 
@@ -101,6 +102,34 @@ describe('AddDeviceForm', () => {
       meta: { state: { on: true } },
     });
     expect(screen.getByText(/Device created successfully/)).toBeInTheDocument();
+  });
+
+  it('loads existing values and updates the device with PUT', async () => {
+    const existingDevice = {
+      deviceId: 'device-42',
+      name: 'Hall lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: true,
+      meta: { state: { on: true } },
+    };
+    render(<AddDeviceForm device={existingDevice} />);
+
+    expect(screen.getByText('Edit Device')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Hall lamp');
+    expect(screen.getByRole('textbox', { name: 'Traits (comma-separated)' })).toHaveValue('action.devices.traits.OnOff');
+    expect(screen.getByLabelText('Will Report State (proactive state reporting)')).toBeChecked();
+    expect(screen.getByLabelText('Initial State: On')).toBeChecked();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Entry lamp' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Device' }));
+
+    expect(await screen.findByText(/Device updated successfully/)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(`${urls.devicesApi}/device-42`, expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include',
+      body: expect.stringContaining('Entry lamp'),
+    }));
   });
 
   it('shows the API error when device creation fails', async () => {
