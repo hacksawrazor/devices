@@ -26,9 +26,16 @@ describe('App routing', () => {
     expect(screen.getByText('Add New Device')).toBeInTheDocument();
   });
 
+  it('renders the devices page at /devices', () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve([]) })) as unknown as typeof fetch;
+    render(<MemoryRouter initialEntries={['/devices']}><App /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: 'Your devices' })).toBeInTheDocument();
+  });
+
   it('shows navigation links', () => {
     render(<MemoryRouter><App /></MemoryRouter>);
     expect(screen.getByText('Add Device')).toBeInTheDocument();
+    expect(screen.getByText('Devices')).toBeInTheDocument();
   });
 });
 

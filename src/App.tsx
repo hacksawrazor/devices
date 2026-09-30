@@ -4,6 +4,7 @@ import { Routes, Route, Link as RouterLink } from 'react-router-dom';
 import ThreeBackground from './components/ThreeBackground';
 import HomePage from './pages/HomePage';
 import AddDevicePage from './pages/AddDevicePage';
+import DevicesPage from './pages/DevicesPage';
 
 const theme = createTheme({
   palette: {
@@ -60,6 +61,7 @@ export default function App() {
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Signal</Link>
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Contact</Link>
               <RouterLink to="/add-device" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Add Device</RouterLink>
+              <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
             </Box>
             <Button component={RouterLink} to="/add-device" variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Start a project</Button>
           </Box>
@@ -67,6 +69,7 @@ export default function App() {
           <Box component="main">
             <Routes>
               <Route path="/add-device" element={<AddDevicePage />} />
+              <Route path="/devices" element={<DevicesPage />} />
               <Route path="/" element={<HomePage />} />
             </Routes>
           </Box>
