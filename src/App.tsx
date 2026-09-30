@@ -1,4 +1,4 @@
-import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, Link, Avatar, Tooltip } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, Link, Avatar, Tooltip, Menu, MenuItem } from '@mui/material';
 import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
 import { Routes, Route, Link as RouterLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -54,6 +54,7 @@ const theme = createTheme({
 export default function App() {
   const [userInfo, setUserInfo] = useState<AuthenticatedUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const userEmail = userInfo?.email ?? null;
 
   useEffect(() => {
@@ -83,10 +84,21 @@ export default function App() {
         <ThreeBackground />
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Box component="header" sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.2, color: '#f4f7ef' }}>
+            <Link component={RouterLink} to="/" underline="none" sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.2, color: '#f4f7ef' }}>
               <AutoAwesome sx={{ color: '#b8f34a' }} />
               <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
             </Link>
+            <Button
+              aria-label="Open navigation"
+              aria-controls={mobileMenuAnchor ? 'mobile-navigation-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={mobileMenuAnchor ? 'true' : undefined}
+              onClick={(event) => setMobileMenuAnchor(event.currentTarget)}
+              sx={{ display: { xs: 'inline-flex', md: 'none' }, alignItems: 'center', gap: 1.2, color: '#f4f7ef', minWidth: 0, px: 0, '&:hover': { bgcolor: 'transparent', boxShadow: 'none' } }}
+            >
+              <AutoAwesome sx={{ color: '#b8f34a' }} />
+              <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
+            </Button>
             <Box component="nav" sx={{ display: { xs: 'none', md: 'flex' }, gap: 4 }}>
               {isAuthenticated(userInfo) && (
                 <RouterLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</RouterLink>
@@ -94,6 +106,28 @@ export default function App() {
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Privacy</Link>
               <Link component={RouterLink} to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>About</Link>
             </Box>
+            <Menu
+              id="mobile-navigation-menu"
+              anchorEl={mobileMenuAnchor}
+              open={Boolean(mobileMenuAnchor)}
+              onClose={() => setMobileMenuAnchor(null)}
+              slotProps={{ paper: { sx: { minWidth: 200, bgcolor: '#181d1b', border: '1px solid rgba(244,247,239,.14)' } } }}
+            >
+              <MenuItem component={RouterLink} to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+                Home
+              </MenuItem>
+              {isAuthenticated(userInfo) && (
+                <MenuItem component={RouterLink} to="/devices" onClick={() => setMobileMenuAnchor(null)} sx={{ color: '#b8f34a' }}>
+                  Devices
+                </MenuItem>
+              )}
+              <MenuItem component={RouterLink} to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+                Privacy
+              </MenuItem>
+              <MenuItem component={RouterLink} to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+                About
+              </MenuItem>
+            </Menu>
             {isAuthenticated(userInfo) ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Tooltip title={userEmail} arrow>

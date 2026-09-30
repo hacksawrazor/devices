@@ -57,6 +57,16 @@ describe('App routing', () => {
     expect(screen.queryByText('Devices')).not.toBeInTheDocument();
   });
 
+  it('does not offer Devices in the mobile menu when signed out', async () => {
+    render(<MemoryRouter><App /></MemoryRouter>);
+    await screen.findByRole('link', { name: 'Login' });
+    const brandMenuButton = screen.getByRole('button', { name: 'Open navigation' });
+    expect(brandMenuButton).toHaveTextContent('Hacksaw');
+    fireEvent.click(brandMenuButton);
+
+    expect(screen.queryByRole('menuitem', { name: 'Devices' })).not.toBeInTheDocument();
+  });
+
   it('fetches userinfo with credentials and shows Login when signed out', async () => {
     render(<MemoryRouter><App /></MemoryRouter>);
 
@@ -76,6 +86,8 @@ describe('App routing', () => {
     expect(screen.getByRole('link', { name: 'Devices' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Logout' })).toHaveAttribute('href', urls.logout);
     expect(screen.queryByRole('link', { name: 'Login' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    expect(screen.getByRole('menuitem', { name: 'Devices' })).toHaveAttribute('href', '/devices');
 
     fireEvent.mouseOver(avatar);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(email);
