@@ -56,7 +56,9 @@ describe('DevicesPage', () => {
     expect(screen.getByText('On')).toBeInTheDocument();
     expect(screen.getByText('Off')).toBeInTheDocument();
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Edit Desk lamp' })).toHaveAttribute('href', '/devices/lamp-1');
+    const editLink = screen.getByRole('link', { name: 'Edit Desk lamp' });
+    expect(editLink).toHaveAttribute('href', '/devices/lamp-1');
+    expect(screen.getByText('Desk lamp').closest('a')).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
   });
 

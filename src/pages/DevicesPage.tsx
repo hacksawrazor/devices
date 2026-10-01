@@ -3,15 +3,16 @@ import {
   Box,
   Button,
   Card,
-  CardActionArea,
   CardContent,
   Chip,
   CircularProgress,
   FormControlLabel,
+  IconButton,
   Switch,
+  Tooltip,
   Typography,
 } from '@mui/material';
-import { Add, DevicesOther, Refresh } from '@mui/icons-material';
+import { Add, BuildOutlined, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { urls } from '../config/urls';
 import type { DeviceRecord } from '../components/AddDeviceForm';
@@ -101,24 +102,34 @@ export default function DevicesPage() {
       ) : (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
           {devices.map((device) => (
-            <Card key={device.deviceId} sx={{ minWidth: 0, bgcolor: 'rgba(24, 29, 27, .86)', border: '1px solid rgba(244,247,239,.12)' }}>
-              <CardActionArea component={RouterLink} to={`/devices/${encodeURIComponent(device.deviceId)}`} aria-label={`Edit ${device.name}`} sx={{ height: '100%' }}>
-                <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>{device.name}</Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(244,247,239,.5)', mt: .5, overflowWrap: 'anywhere' }}>{device.deviceId}</Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ color: '#62d8ff', mb: 2, overflowWrap: 'anywhere' }}>{device.type?.replace('action.devices.types.', '') || 'Unknown type'}</Typography>
-                  <Box sx={{ display: 'flex', gap: .75, flexWrap: 'wrap', mb: 2 }}>
-                    {(device.traits || []).map((trait) => <Chip key={trait} size="small" variant="outlined" label={trait.replace('action.devices.traits.', '')} sx={{ borderColor: 'rgba(244,247,239,.2)', color: 'rgba(244,247,239,.7)' }} />)}
-                    {(!device.traits || device.traits.length === 0) && <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.45)' }}>No traits listed</Typography>}
-                  </Box>
-                  <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.48)' }}>
-                    {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-              <Box sx={{ px: 3, pb: 2 }}>
+            <Card key={device.deviceId} sx={{
+              minWidth: 0,
+              bgcolor: 'rgba(24, 29, 27, .86)',
+              border: '1px solid rgba(244,247,239,.12)',
+              transition: 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease',
+              '&:hover': {
+                transform: 'translateY(-3px)',
+                bgcolor: 'rgba(30, 37, 33, .96)',
+                borderColor: 'rgba(184, 243, 74, .48)',
+                boxShadow: '0 12px 28px rgba(0, 0, 0, .24)',
+              },
+              '@media (prefers-reduced-motion: reduce)': { transition: 'none', '&:hover': { transform: 'none' } },
+            }}>
+              <CardContent sx={{ p: 3, '&:last-child': { pb: 2 } }}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>{device.name}</Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(244,247,239,.5)', mt: .5, overflowWrap: 'anywhere' }}>{device.deviceId}</Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: '#62d8ff', mb: 2, overflowWrap: 'anywhere' }}>{device.type?.replace('action.devices.types.', '') || 'Unknown type'}</Typography>
+                <Box sx={{ display: 'flex', gap: .75, flexWrap: 'wrap', mb: 2 }}>
+                  {(device.traits || []).map((trait) => <Chip key={trait} size="small" variant="outlined" label={trait.replace('action.devices.traits.', '')} sx={{ borderColor: 'rgba(244,247,239,.2)', color: 'rgba(244,247,239,.7)' }} />)}
+                  {(!device.traits || device.traits.length === 0) && <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.45)' }}>No traits listed</Typography>}
+                </Box>
+                <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.48)' }}>
+                  {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
+                </Typography>
+              </CardContent>
+              <Box sx={{ px: 2, pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <FormControlLabel
                   control={(
                     <Switch
@@ -130,6 +141,17 @@ export default function DevicesPage() {
                   )}
                   label={device.currentState?.on ? 'On' : 'Off'}
                 />
+                <Tooltip title={`Edit ${device.name}`}>
+                  <IconButton
+                    component={RouterLink}
+                    to={`/devices/${encodeURIComponent(device.deviceId)}`}
+                    aria-label={`Edit ${device.name}`}
+                    size="small"
+                    sx={{ color: 'rgba(244,247,239,.72)', '&:hover': { color: '#b8f34a' } }}
+                  >
+                    <BuildOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Card>
           ))}

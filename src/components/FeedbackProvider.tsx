@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Alert, Snackbar } from '@mui/material';
+import { Alert, Snackbar, useMediaQuery, useTheme } from '@mui/material';
 import { FeedbackContext, type FeedbackSeverity } from './feedbackContext';
 
 type FeedbackMessage = { id: number; message: string; severity: FeedbackSeverity } | null;
 
 export default function FeedbackProvider({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [feedback, setFeedback] = useState<FeedbackMessage>(null);
   const [open, setOpen] = useState(false);
   const feedbackId = useRef(0);
@@ -24,7 +26,7 @@ export default function FeedbackProvider({ children }: { children: ReactNode }) 
         key={feedback?.id}
         open={open}
         autoHideDuration={5000}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'top', horizontal: isSmallScreen ? 'center' : 'right' }}
         onClose={() => setOpen(false)}
         slotProps={{
           transition: {
