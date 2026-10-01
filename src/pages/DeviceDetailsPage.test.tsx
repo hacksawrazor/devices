@@ -16,7 +16,7 @@ describe('DeviceDetailsPage', () => {
       type: 'action.devices.types.LIGHT',
       traits: ['action.devices.traits.OnOff'],
       willReportState: false,
-      meta: { state: { on: false } },
+      currentState: { on: false },
     };
     const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => device });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -59,7 +59,7 @@ describe('DeviceDetailsPage', () => {
       type: 'action.devices.types.LIGHT',
       traits: ['action.devices.traits.OnOff'],
       willReportState: false,
-      meta: { state: { on: false } },
+      currentState: { on: false },
     };
     globalThis.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => device })

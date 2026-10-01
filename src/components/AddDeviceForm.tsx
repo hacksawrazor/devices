@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowBack } from '@mui/icons-material';
-import { urls } from '../config/urls';
+import { buildDevicePayload } from '../utils/deviceApi';
+import useDeviceActions from '../hooks/useDeviceActions';
 import {
   TextField,
   Button,
@@ -24,16 +25,18 @@ interface DeviceFormData {
   type: string;
   traits: string;
   willReportState: boolean;
+  currentStateOn: boolean;
   metaStateOn: boolean;
   isVirtualDevice: boolean;
 }
 
-export interface DeviceRecord extends Omit<DeviceFormData, 'traits' | 'metaStateOn' | 'isVirtualDevice'> {
+export interface DeviceRecord extends Omit<DeviceFormData, 'traits' | 'currentStateOn' | 'metaStateOn' | 'isVirtualDevice'> {
   deviceId: string;
   traits: string[];
   createdBy?: string;
   isVirtualDevice?: boolean;
-  meta?: { state?: { on?: boolean }; [key: string]: unknown };
+  currentState?: { on?: boolean; [key: string]: unknown };
+  meta?: { state?: { on?: boolean; [key: string]: unknown }; [key: string]: unknown };
 }
 
 interface FormErrors {
@@ -89,6 +92,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
     type: existingDevice?.type ?? 'action.devices.types.LIGHT',
     traits: existingDevice?.traits.join(', ') ?? '',
     willReportState: existingDevice?.willReportState ?? false,
+    currentStateOn: existingDevice?.currentState?.on ?? false,
     metaStateOn: existingDevice?.meta?.state?.on ?? false,
     isVirtualDevice: existingDevice?.isVirtualDevice ?? false,
   }));
@@ -98,6 +102,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const { showFeedback } = useFeedback();
+  const { saveDevice, deleteDevice } = useDeviceActions();
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -121,38 +126,18 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
 
     setSubmitting(true);
 
-    const payload = {
+    const payload = buildDevicePayload({
       name: device.name.trim(),
       type: device.type.trim(),
       traits: parseTraits(device.traits),
       willReportState: device.willReportState,
       isVirtualDevice: device.isVirtualDevice,
-      meta: {
-        state: {
-          on: device.metaStateOn,
-        },
-      },
-    };
+      currentState: existingDevice?.currentState,
+      meta: existingDevice?.meta,
+    }, device.currentStateOn, device.metaStateOn);
 
     try {
-      
-      const response = await fetch(
-        isEditing ? `${urls.devicesApi}/${encodeURIComponent(existingDevice!.deviceId)}` : urls.devicesApi,
-        {
-        method: isEditing ? 'PUT' : 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        },
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-
+      await saveDevice(payload, isEditing ? existingDevice!.deviceId : undefined);
       showFeedback(isEditing ? 'Device updated successfully' : 'Device created successfully', 'success');
       onSaved?.();
       if (!isEditing && !onSaved) setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '', isVirtualDevice: false });
@@ -167,16 +152,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
     if (!existingDevice) return;
     setDeleting(true);
     try {
-      const response = await fetch(`${urls.devicesApi}/${encodeURIComponent(existingDevice.deviceId)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-
+      await deleteDevice(existingDevice.deviceId);
       setConfirmDeleteOpen(false);
       showFeedback('Device deleted successfully', 'success');
       onDeleted?.();
@@ -311,12 +287,22 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
             <FormControlLabel
               control={
                 <Checkbox
+                  checked={device.currentStateOn}
+                  onChange={(e) => setDevice({ ...device, currentStateOn: e.target.checked })}
+                  color="primary"
+                />
+              }
+              label="Current State: On"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={device.metaStateOn}
                   onChange={(e) => setDevice({ ...device, metaStateOn: e.target.checked })}
                   color="primary"
                 />
               }
-              label="Initial State: On"
+              label="Meta State: On"
             />
           </Box>
 

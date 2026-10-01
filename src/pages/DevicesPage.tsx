@@ -7,6 +7,8 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  FormControlLabel,
+  Switch,
   Typography,
 } from '@mui/material';
 import { Add, DevicesOther, Refresh } from '@mui/icons-material';
@@ -14,12 +16,14 @@ import { Link as RouterLink } from 'react-router-dom';
 import { urls } from '../config/urls';
 import type { DeviceRecord } from '../components/AddDeviceForm';
 import { useFeedback } from '../components/feedbackContext';
+import useDeviceActions from '../hooks/useDeviceActions';
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { showFeedback } = useFeedback();
+  const { toggleCurrentState, togglingDeviceIds } = useDeviceActions();
 
   const loadDevices = useCallback(async () => {
     setLoading(true);
@@ -42,6 +46,19 @@ export default function DevicesPage() {
   useEffect(() => {
     void Promise.resolve().then(() => loadDevices());
   }, [loadDevices]);
+
+  const toggleDeviceState = async (device: DeviceRecord) => {
+    try {
+      const nextOn = await toggleCurrentState(device);
+
+      setDevices((current) => current.map((item) => item.deviceId === device.deviceId
+        ? { ...item, currentState: { ...item.currentState, on: nextOn } }
+        : item));
+      showFeedback(`${device.name} turned ${nextOn ? 'on' : 'off'}`, 'success');
+    } catch (err) {
+      showFeedback(err instanceof Error ? err.message : 'Failed to update device state', 'error');
+    }
+  };
 
   return (
     <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 6, md: 10 }, minHeight: '65vh' }}>
@@ -81,24 +98,34 @@ export default function DevicesPage() {
           {devices.map((device) => (
             <Card key={device.deviceId} sx={{ minWidth: 0, bgcolor: 'rgba(24, 29, 27, .86)', border: '1px solid rgba(244,247,239,.12)' }}>
               <CardActionArea component={RouterLink} to={`/devices/${encodeURIComponent(device.deviceId)}`} aria-label={`Edit ${device.name}`} sx={{ height: '100%' }}>
-              <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 2, mb: 2 }}>
-                  <Box sx={{ minWidth: 0 }}>
+                <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>{device.name}</Typography>
                     <Typography variant="body2" sx={{ color: 'rgba(244,247,239,.5)', mt: .5, overflowWrap: 'anywhere' }}>{device.deviceId}</Typography>
                   </Box>
-                  <Chip size="small" label={device.meta?.state?.on ? 'On' : 'Off'} sx={{ bgcolor: device.meta?.state?.on ? 'rgba(184,243,74,.15)' : 'rgba(244,247,239,.08)', color: device.meta?.state?.on ? '#b8f34a' : 'rgba(244,247,239,.7)' }} />
-                </Box>
-                <Typography variant="body2" sx={{ color: '#62d8ff', mb: 2, overflowWrap: 'anywhere' }}>{device.type?.replace('action.devices.types.', '') || 'Unknown type'}</Typography>
-                <Box sx={{ display: 'flex', gap: .75, flexWrap: 'wrap', mb: 2 }}>
-                  {(device.traits || []).map((trait) => <Chip key={trait} size="small" variant="outlined" label={trait.replace('action.devices.traits.', '')} sx={{ borderColor: 'rgba(244,247,239,.2)', color: 'rgba(244,247,239,.7)' }} />)}
-                  {(!device.traits || device.traits.length === 0) && <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.45)' }}>No traits listed</Typography>}
-                </Box>
-                <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.48)' }}>
-                  {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
-                </Typography>
-              </CardContent>
+                  <Typography variant="body2" sx={{ color: '#62d8ff', mb: 2, overflowWrap: 'anywhere' }}>{device.type?.replace('action.devices.types.', '') || 'Unknown type'}</Typography>
+                  <Box sx={{ display: 'flex', gap: .75, flexWrap: 'wrap', mb: 2 }}>
+                    {(device.traits || []).map((trait) => <Chip key={trait} size="small" variant="outlined" label={trait.replace('action.devices.traits.', '')} sx={{ borderColor: 'rgba(244,247,239,.2)', color: 'rgba(244,247,239,.7)' }} />)}
+                    {(!device.traits || device.traits.length === 0) && <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.45)' }}>No traits listed</Typography>}
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'rgba(244,247,239,.48)' }}>
+                    {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
+                  </Typography>
+                </CardContent>
               </CardActionArea>
+              <Box sx={{ px: 3, pb: 2 }}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={Boolean(device.currentState?.on)}
+                      disabled={loading || togglingDeviceIds.has(device.deviceId)}
+                      onChange={() => void toggleDeviceState(device)}
+                      slotProps={{ input: { 'aria-label': `${device.name} current state` } }}
+                    />
+                  )}
+                  label={device.currentState?.on ? 'On' : 'Off'}
+                />
+              </Box>
             </Card>
           ))}
         </Box>

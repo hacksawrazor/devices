@@ -58,15 +58,19 @@ describe('AddDeviceForm', () => {
     expect(traitsField).toHaveValue('');
   });
 
-  it('checks willReportState and metaStateOn', async () => {
+  it('checks willReportState and the initial state', async () => {
     render(<AddDeviceForm />);
     const willReport = screen.getByLabelText('Will Report State (proactive state reporting)');
     fireEvent.click(willReport);
     expect(willReport).toBeChecked();
 
-    const metaOn = screen.getByLabelText('Initial State: On');
-    fireEvent.click(metaOn);
-    expect(metaOn).toBeChecked();
+    const currentStateOn = screen.getByLabelText('Current State: On');
+    fireEvent.click(currentStateOn);
+    expect(currentStateOn).toBeChecked();
+
+    const metaStateOn = screen.getByLabelText('Meta State: On');
+    fireEvent.click(metaStateOn);
+    expect(metaStateOn).toBeChecked();
   });
 
   it('checks isVirtualDevice checkbox', async () => {
@@ -96,7 +100,8 @@ describe('AddDeviceForm', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Test Light' } });
     fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByLabelText('Will Report State (proactive state reporting)'));
-    fireEvent.click(screen.getByLabelText('Initial State: On'));
+    fireEvent.click(screen.getByLabelText('Current State: On'));
+    fireEvent.click(screen.getByLabelText('Meta State: On'));
     fireEvent.click(screen.getByLabelText('Is Virtual Device (skip MQTT publish/report processing)'));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
 
@@ -112,6 +117,7 @@ describe('AddDeviceForm', () => {
       traits: expect.arrayContaining(['action.devices.traits.OnOff']),
       willReportState: true,
       isVirtualDevice: true,
+      currentState: { on: true },
       meta: { state: { on: true } },
     });
     expect(screen.getByText(/Device created successfully/)).toBeInTheDocument();
@@ -125,7 +131,8 @@ describe('AddDeviceForm', () => {
       type: 'action.devices.types.LIGHT',
       traits: ['action.devices.traits.OnOff'],
       willReportState: true,
-      meta: { state: { on: true } },
+      meta: { state: { on: false, source: 'device-meta' } },
+      currentState: { on: true },
     };
     render(<FeedbackProvider><AddDeviceForm device={existingDevice} /></FeedbackProvider>);
 
@@ -133,7 +140,8 @@ describe('AddDeviceForm', () => {
     expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Hall lamp');
     expect(screen.getByRole('textbox', { name: 'Traits (comma-separated)' })).toHaveValue('action.devices.traits.OnOff');
     expect(screen.getByLabelText('Will Report State (proactive state reporting)')).toBeChecked();
-    expect(screen.getByLabelText('Initial State: On')).toBeChecked();
+    expect(screen.getByLabelText('Current State: On')).toBeChecked();
+    expect(screen.getByLabelText('Meta State: On')).not.toBeChecked();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Entry lamp' } });
     fireEvent.click(screen.getByRole('button', { name: 'Update Device' }));
@@ -144,6 +152,11 @@ describe('AddDeviceForm', () => {
       credentials: 'include',
       body: expect.stringContaining('Entry lamp'),
     }));
+    const [, updateRequest] = fetchMock.mock.calls[0];
+    expect(JSON.parse(updateRequest.body as string)).toMatchObject({
+      currentState: { on: true },
+      meta: { state: { on: false, source: 'device-meta' } },
+    });
     expect(screen.getByRole('button', { name: 'Delete device' })).toBeInTheDocument();
   });
 
@@ -156,7 +169,7 @@ describe('AddDeviceForm', () => {
       willReportState: true,
       isVirtualDevice: true,
       createdBy: 'user_xyz789',
-      meta: { state: { on: true } },
+      currentState: { on: true },
     };
     render(<FeedbackProvider><AddDeviceForm device={existingDevice} /></FeedbackProvider>);
 
@@ -178,7 +191,7 @@ describe('AddDeviceForm', () => {
         type: 'action.devices.types.LIGHT',
         traits: ['action.devices.traits.OnOff'],
         willReportState: false,
-        meta: { state: { on: false } },
+        currentState: { on: false },
       }}
       onDeleted={onDeleted}
     /></FeedbackProvider>);

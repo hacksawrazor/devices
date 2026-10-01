@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DevicesPage from './DevicesPage';
 import FeedbackProvider from '../components/FeedbackProvider';
@@ -19,7 +19,14 @@ describe('DevicesPage', () => {
       type: 'action.devices.types.LIGHT',
       traits: ['action.devices.traits.OnOff', 'action.devices.traits.Brightness'],
       willReportState: true,
-      meta: { state: { on: true } },
+      currentState: { on: true },
+    }, {
+      deviceId: 'switch-2',
+      name: 'Entry switch',
+      type: 'action.devices.types.SWITCH',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: false,
+      currentState: { on: false },
     }];
     const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => devices });
     mockFetch(fetchMock);
@@ -30,12 +37,48 @@ describe('DevicesPage', () => {
     expect(await screen.findByText('Desk lamp')).toBeInTheDocument();
     expect(screen.getByText('lamp-1')).toBeInTheDocument();
     expect(screen.getByText('LIGHT')).toBeInTheDocument();
-    expect(screen.getByText('OnOff')).toBeInTheDocument();
+    expect(screen.getAllByText('OnOff')).toHaveLength(2);
     expect(screen.getByText('Brightness')).toBeInTheDocument();
     expect(screen.getByText('On')).toBeInTheDocument();
+    expect(screen.getByText('Off')).toBeInTheDocument();
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit Desk lamp' })).toHaveAttribute('href', '/devices/lamp-1');
     expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
+  });
+
+  it('toggles currentState from the card and preserves meta.state', async () => {
+    const device = {
+      deviceId: 'lamp-1',
+      name: 'Desk lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: true,
+      currentState: { on: true, brightness: 35 },
+      meta: { state: { on: false, source: 'device-meta' } },
+    };
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [device] })
+      .mockResolvedValueOnce({ ok: true });
+    mockFetch(fetchMock);
+
+    render(<MemoryRouter><DevicesPage /></MemoryRouter>);
+
+    const stateToggle = await screen.findByRole('switch', { name: 'Desk lamp current state' });
+    expect(stateToggle).toBeChecked();
+    fireEvent.click(stateToggle);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock).toHaveBeenLastCalledWith('https://apis.hacksaw.in/devices/api/devices/lamp-1', expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+    const [, updateRequest] = fetchMock.mock.calls[1];
+    expect(JSON.parse(updateRequest.body as string)).toMatchObject({
+      currentState: { on: false, brightness: 35 },
+      meta: { state: { on: false, source: 'device-meta' } },
+    });
+    await waitFor(() => expect(stateToggle).not.toBeChecked());
   });
 
   it('shows an empty state when there are no devices', async () => {
