@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 declare const global: typeof globalThis;
+declare const process: { env: { NODE_ENV: string; VITE_DEV_AUTH_EMAIL?: string } };
 import App from './App';
 import { urls } from './config/urls';
 
@@ -17,12 +18,25 @@ jest.mock('three', () => {
 });
 
 describe('App routing', () => {
+  let originalNodeEnv: string | undefined;
+  let originalDevAuthEmail: string | undefined;
+
   beforeEach(() => {
+    originalNodeEnv = process.env.NODE_ENV;
+    originalDevAuthEmail = process.env.VITE_DEV_AUTH_EMAIL;
     global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) })) as unknown as typeof fetch;
   });
 
-  it('renders home page at /', () => {
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv;
+    if (originalDevAuthEmail === undefined) delete process.env.VITE_DEV_AUTH_EMAIL;
+    else process.env.VITE_DEV_AUTH_EMAIL = originalDevAuthEmail;
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) })) as unknown as typeof fetch;
+  });
+
+  it('renders home page at /', async () => {
     render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
+    await screen.findByRole('link', { name: 'Login' });
     expect(screen.getByText('Make the next move')).toBeInTheDocument();
   });
 
@@ -92,11 +106,45 @@ describe('App routing', () => {
     fireEvent.mouseOver(avatar);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(email);
   });
+
+  it('uses a local identity without calling SSO in development', () => {
+    process.env.NODE_ENV = 'development';
+    process.env.VITE_DEV_AUTH_EMAIL = 'local@example.test';
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    render(<MemoryRouter><App /></MemoryRouter>);
+
+    expect(screen.getByLabelText('Signed in as local@example.test')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign out (dev)' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('toggles local sign-in and sign-out in development without navigating to SSO', () => {
+    process.env.NODE_ENV = 'development';
+    process.env.VITE_DEV_AUTH_EMAIL = 'local@example.test';
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+    render(<MemoryRouter><App /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out (dev)' }));
+    expect(screen.getByRole('button', { name: 'Sign in (dev)' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Signed in as local@example.test')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in (dev)' }));
+    expect(screen.getByLabelText('Signed in as local@example.test')).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('home screen', () => {
-  it('renders the landing page content and primary actions', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) })) as unknown as typeof fetch;
+  });
+
+  it('renders the landing page content and primary actions', async () => {
     render(<MemoryRouter><App /></MemoryRouter>);
+    await screen.findByRole('link', { name: 'Login' });
     expect(screen.getByRole('heading', { name: /Make the next move obvious/ })).toBeInTheDocument();
     expect(screen.getByText('Independent digital studio')).toBeInTheDocument();
     expect(screen.getByText('Sharp thinking')).toBeInTheDocument();

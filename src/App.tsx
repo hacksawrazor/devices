@@ -11,6 +11,7 @@ import { urls } from './config/urls';
 import { getLoginUrl } from './utils/getLoginUrl';
 import FeedbackProvider from './components/FeedbackProvider';
 import { isAuthenticated, type AuthenticatedUser } from './utils/isAuthenticated';
+import { getDevelopmentUser, isDevelopmentAuthEnabled } from '../dev/developmentAuth';
 import AuthenticatedRoute from './components/AuthenticatedRoute';
 
 const theme = createTheme({
@@ -52,12 +53,17 @@ const theme = createTheme({
 });
 
 export default function App() {
-  const [userInfo, setUserInfo] = useState<AuthenticatedUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const developmentAuthEnabled = isDevelopmentAuthEnabled();
+  const [userInfo, setUserInfo] = useState<AuthenticatedUser | null>(() => (
+    developmentAuthEnabled ? getDevelopmentUser() : null
+  ));
+  const [authLoading, setAuthLoading] = useState(!developmentAuthEnabled);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const userEmail = userInfo?.email ?? null;
 
   useEffect(() => {
+    if (developmentAuthEnabled) return undefined;
+
     let active = true;
     fetch(urls.userInfo, { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
@@ -74,7 +80,7 @@ export default function App() {
         }
       });
     return () => { active = false; };
-  }, []);
+    }, [developmentAuthEnabled]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -135,10 +141,29 @@ export default function App() {
                     {userEmail.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()}
                   </Avatar>
                 </Tooltip>
-                <Button href={urls.logout} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Logout</Button>
+                <Button
+                  href={developmentAuthEnabled ? undefined : urls.logout}
+                  onClick={developmentAuthEnabled ? () => setUserInfo(null) : undefined}
+                  variant="outlined"
+                  endIcon={<ArrowOutward />}
+                  sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}
+                >
+                  {developmentAuthEnabled ? 'Sign out (dev)' : 'Logout'}
+                </Button>
               </Box>
             ) : (
-              <Button href={getLoginUrl()} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
+              developmentAuthEnabled ? (
+                <Button
+                  onClick={() => setUserInfo(getDevelopmentUser())}
+                  variant="outlined"
+                  endIcon={<ArrowOutward />}
+                  sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}
+                >
+                  Sign in (dev)
+                </Button>
+              ) : (
+                <Button href={getLoginUrl()} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
+              )
             )}
           </Box>
 

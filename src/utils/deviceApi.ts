@@ -1,6 +1,5 @@
 import { urls } from '../config/urls';
-
-declare const process: { env: { NODE_ENV: string; VITE_DEVICE_API_TOKEN?: string } };
+import { getRuntimeEnvironment } from '../config/runtimeEnvironment';
 
 interface DeviceState {
   on?: boolean;
@@ -28,9 +27,9 @@ export interface DevicePayload extends Omit<DevicePayloadSource, 'currentState' 
 }
 
 export function getDeviceApiHeaders(): { Authorization: string } | undefined {
-  const token = process.env.VITE_DEVICE_API_TOKEN;
-  return process.env.NODE_ENV === 'development' && token
-    ? { Authorization: `Bearer ${token}` }
+  const { isDevelopment, deviceApiToken } = getRuntimeEnvironment();
+  return isDevelopment && deviceApiToken
+    ? { Authorization: `Bearer ${deviceApiToken}` }
     : undefined;
 }
 
