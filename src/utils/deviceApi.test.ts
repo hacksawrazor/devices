@@ -7,6 +7,8 @@ import {
 } from './deviceApi';
 import { urls } from '../config/urls';
 
+declare const process: { env: { NODE_ENV: string; VITE_DEVICE_API_TOKEN?: string } };
+
 const setFetchMock = (fetchMock: jest.Mock) => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
 };
@@ -99,6 +101,60 @@ describe('deviceApi', () => {
       method: 'DELETE',
       credentials: 'include',
     });
+  });
+
+  it('uses the configured authorization token for device requests in development', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalToken = process.env.VITE_DEVICE_API_TOKEN;
+    process.env.NODE_ENV = 'development';
+    process.env.VITE_DEVICE_API_TOKEN = 'test-device-api-token';
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    setFetchMock(fetchMock);
+
+    try {
+      await saveDevice({
+        name: 'Desk lamp',
+        type: 'action.devices.types.LIGHT',
+        traits: [],
+        willReportState: false,
+        currentState: { on: false },
+        meta: { state: { on: false } },
+      });
+      await deleteDevice('lamp/one');
+
+      expect(fetchMock.mock.calls[0][1].headers).toEqual({
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-device-api-token',
+      });
+      expect(fetchMock.mock.calls[1][1].headers).toEqual({
+        Authorization: 'Bearer test-device-api-token',
+      });
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalToken === undefined) delete process.env.VITE_DEVICE_API_TOKEN;
+      else process.env.VITE_DEVICE_API_TOKEN = originalToken;
+    }
+  });
+
+  it('omits authorization when no development token is configured', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalToken = process.env.VITE_DEVICE_API_TOKEN;
+    process.env.NODE_ENV = 'development';
+    delete process.env.VITE_DEVICE_API_TOKEN;
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    setFetchMock(fetchMock);
+
+    try {
+      await deleteDevice('lamp/one');
+      expect(fetchMock).toHaveBeenCalledWith(`${urls.devicesApi}/lamp%2Fone`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalToken === undefined) delete process.env.VITE_DEVICE_API_TOKEN;
+      else process.env.VITE_DEVICE_API_TOKEN = originalToken;
+    }
   });
 
   it.each([

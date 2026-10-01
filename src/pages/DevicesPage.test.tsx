@@ -2,14 +2,28 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DevicesPage from './DevicesPage';
 import FeedbackProvider from '../components/FeedbackProvider';
+import { urls } from '../config/urls';
+
+declare const process: { env: { NODE_ENV: string; VITE_DEVICE_API_TOKEN?: string } };
 
 const mockFetch = (implementation: jest.Mock) => {
   globalThis.fetch = implementation as unknown as typeof fetch;
 };
 
 describe('DevicesPage', () => {
+  let originalNodeEnv: string | undefined;
+  let originalToken: string | undefined;
+
+  beforeEach(() => {
+    originalNodeEnv = process.env.NODE_ENV;
+    originalToken = process.env.VITE_DEVICE_API_TOKEN;
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
+    process.env.NODE_ENV = originalNodeEnv;
+    if (originalToken === undefined) delete process.env.VITE_DEVICE_API_TOKEN;
+    else process.env.VITE_DEVICE_API_TOKEN = originalToken;
   });
 
   it('fetches and displays devices as cards', async () => {
@@ -44,6 +58,21 @@ describe('DevicesPage', () => {
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit Desk lamp' })).toHaveAttribute('href', '/devices/lamp-1');
     expect(fetchMock).toHaveBeenCalledWith('https://apis.hacksaw.in/devices/api/devices', { credentials: 'include' });
+  });
+
+  it('adds the development authorization header when fetching devices', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.VITE_DEVICE_API_TOKEN = 'test-device-api-token';
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    mockFetch(fetchMock);
+
+    render(<MemoryRouter><DevicesPage /></MemoryRouter>);
+
+    expect(await screen.findByText('No devices yet')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(urls.devicesApi, {
+      credentials: 'include',
+      headers: { Authorization: 'Bearer test-device-api-token' },
+    });
   });
 
   it('toggles currentState from the card and preserves meta.state', async () => {

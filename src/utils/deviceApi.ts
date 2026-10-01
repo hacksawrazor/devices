@@ -1,5 +1,7 @@
 import { urls } from '../config/urls';
 
+declare const process: { env: { NODE_ENV: string; VITE_DEVICE_API_TOKEN?: string } };
+
 interface DeviceState {
   on?: boolean;
   [key: string]: unknown;
@@ -23,6 +25,13 @@ export interface DevicePayloadSource {
 export interface DevicePayload extends Omit<DevicePayloadSource, 'currentState' | 'meta'> {
   currentState: DeviceState & { on: boolean };
   meta: DeviceMeta & { state: DeviceState & { on: boolean } };
+}
+
+export function getDeviceApiHeaders(): { Authorization: string } | undefined {
+  const token = process.env.VITE_DEVICE_API_TOKEN;
+  return process.env.NODE_ENV === 'development' && token
+    ? { Authorization: `Bearer ${token}` }
+    : undefined;
 }
 
 export function buildDevicePayload(
@@ -49,11 +58,15 @@ async function requestDevice(
   method: 'POST' | 'PUT' | 'DELETE',
   payload?: DevicePayload,
 ): Promise<void> {
+  const headers = {
+    ...(payload ? { 'Content-Type': 'application/json' } : {}),
+    ...getDeviceApiHeaders(),
+  };
   const response = await fetch(url, {
     method,
     credentials: 'include',
+    ...(Object.keys(headers).length > 0 ? { headers } : {}),
     ...(payload ? {
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     } : {}),
   });

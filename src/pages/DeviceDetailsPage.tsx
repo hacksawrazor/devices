@@ -4,6 +4,7 @@ import { ArrowBack } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import AddDeviceForm, { type DeviceRecord } from '../components/AddDeviceForm';
 import { urls } from '../config/urls';
+import { getDeviceApiHeaders } from '../utils/deviceApi';
 import { useFeedback } from '../components/feedbackContext';
 
 export default function DeviceDetailsPage() {
@@ -19,7 +20,11 @@ export default function DeviceDetailsPage() {
 
     const loadDevice = async () => {
       try {
-        const response = await fetch(`${urls.devicesApi}/${encodeURIComponent(id || '')}`, { credentials: 'include' });
+        const headers = getDeviceApiHeaders();
+        const response = await fetch(`${urls.devicesApi}/${encodeURIComponent(id || '')}`, {
+          credentials: 'include',
+          ...(headers ? { headers } : {}),
+        });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
         if (active) setDevice(data);

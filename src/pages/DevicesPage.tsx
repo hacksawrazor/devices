@@ -15,6 +15,7 @@ import { Add, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { urls } from '../config/urls';
 import type { DeviceRecord } from '../components/AddDeviceForm';
+import { getDeviceApiHeaders } from '../utils/deviceApi';
 import { useFeedback } from '../components/feedbackContext';
 import useDeviceActions from '../hooks/useDeviceActions';
 
@@ -29,7 +30,11 @@ export default function DevicesPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(urls.devicesApi, { credentials: 'include' });
+      const headers = getDeviceApiHeaders();
+      const response = await fetch(urls.devicesApi, {
+        credentials: 'include',
+        ...(headers ? { headers } : {}),
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
       if (!Array.isArray(data)) throw new Error('Unexpected response from the devices API');
