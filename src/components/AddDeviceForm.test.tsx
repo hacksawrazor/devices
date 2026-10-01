@@ -29,6 +29,8 @@ describe('AddDeviceForm', () => {
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('Will Report State (proactive state reporting)')).toBeInTheDocument();
+    expect(screen.getByText('Is Virtual Device (skip MQTT publish/report processing)')).toBeInTheDocument();
+    expect(screen.queryByText('Created By')).not.toBeInTheDocument();
   });
 
   it('accepts device name input', async () => {
@@ -67,6 +69,14 @@ describe('AddDeviceForm', () => {
     expect(metaOn).toBeChecked();
   });
 
+  it('checks isVirtualDevice checkbox', async () => {
+    render(<AddDeviceForm />);
+    const virtualDevice = screen.getByLabelText('Is Virtual Device (skip MQTT publish/report processing)');
+    expect(virtualDevice).not.toBeChecked();
+    fireEvent.click(virtualDevice);
+    expect(virtualDevice).toBeChecked();
+  });
+
   it('includes submit button', () => {
     render(<AddDeviceForm />);
     expect(screen.getByText('Create Device')).toBeInTheDocument();
@@ -87,6 +97,7 @@ describe('AddDeviceForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'OnOff' }));
     fireEvent.click(screen.getByLabelText('Will Report State (proactive state reporting)'));
     fireEvent.click(screen.getByLabelText('Initial State: On'));
+    fireEvent.click(screen.getByLabelText('Is Virtual Device (skip MQTT publish/report processing)'));
     fireEvent.click(screen.getByRole('button', { name: 'Create Device' }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
@@ -100,6 +111,7 @@ describe('AddDeviceForm', () => {
       type: 'action.devices.types.LIGHT',
       traits: expect.arrayContaining(['action.devices.traits.OnOff']),
       willReportState: true,
+      isVirtualDevice: true,
       meta: { state: { on: true } },
     });
     expect(screen.getByText(/Device created successfully/)).toBeInTheDocument();
@@ -133,6 +145,28 @@ describe('AddDeviceForm', () => {
       body: expect.stringContaining('Entry lamp'),
     }));
     expect(screen.getByRole('button', { name: 'Delete device' })).toBeInTheDocument();
+  });
+
+  it('displays read-only createdBy field and loads isVirtualDevice for pre-existing devices', () => {
+    const existingDevice = {
+      deviceId: 'device-42',
+      name: 'Hall lamp',
+      type: 'action.devices.types.LIGHT',
+      traits: ['action.devices.traits.OnOff'],
+      willReportState: true,
+      isVirtualDevice: true,
+      createdBy: 'user_xyz789',
+      meta: { state: { on: true } },
+    };
+    render(<FeedbackProvider><AddDeviceForm device={existingDevice} /></FeedbackProvider>);
+
+    const createdByField = screen.getByRole('textbox', { name: 'Created By' });
+    expect(createdByField).toBeInTheDocument();
+    expect(createdByField).toHaveValue('user_xyz789');
+    expect(createdByField).toHaveAttribute('readonly');
+
+    const virtualCheckbox = screen.getByLabelText('Is Virtual Device (skip MQTT publish/report processing)');
+    expect(virtualCheckbox).toBeChecked();
   });
 
   it('confirms and deletes an existing device', async () => {

@@ -25,11 +25,14 @@ interface DeviceFormData {
   traits: string;
   willReportState: boolean;
   metaStateOn: boolean;
+  isVirtualDevice: boolean;
 }
 
-export interface DeviceRecord extends Omit<DeviceFormData, 'traits' | 'metaStateOn'> {
+export interface DeviceRecord extends Omit<DeviceFormData, 'traits' | 'metaStateOn' | 'isVirtualDevice'> {
   deviceId: string;
   traits: string[];
+  createdBy?: string;
+  isVirtualDevice?: boolean;
   meta?: { state?: { on?: boolean }; [key: string]: unknown };
 }
 
@@ -87,6 +90,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
     traits: existingDevice?.traits.join(', ') ?? '',
     willReportState: existingDevice?.willReportState ?? false,
     metaStateOn: existingDevice?.meta?.state?.on ?? false,
+    isVirtualDevice: existingDevice?.isVirtualDevice ?? false,
   }));
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -122,6 +126,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
       type: device.type.trim(),
       traits: parseTraits(device.traits),
       willReportState: device.willReportState,
+      isVirtualDevice: device.isVirtualDevice,
       meta: {
         state: {
           on: device.metaStateOn,
@@ -150,7 +155,7 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
 
       showFeedback(isEditing ? 'Device updated successfully' : 'Device created successfully', 'success');
       onSaved?.();
-      if (!isEditing && !onSaved) setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '' });
+      if (!isEditing && !onSaved) setDevice({ ...device, name: '', type: 'action.devices.types.LIGHT', traits: '', isVirtualDevice: false });
     } catch (err) {
       showFeedback(err instanceof Error ? err.message : 'Failed to save device', 'error');
     } finally {
@@ -258,6 +263,23 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
             </div>
           </Box>
 
+          {isEditing && (
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Created By"
+                name="createdBy"
+                value={existingDevice?.createdBy ?? ''}
+                slotProps={{
+                  input: {
+                    readOnly: true,
+                  },
+                }}
+                helperText="Identifier of the user who created this device (read-only)"
+              />
+            </Box>
+          )}
+
           <Box sx={{ mb: 3 }}>
             <FormControlLabel
               control={
@@ -268,6 +290,20 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
                 />
               }
               label="Will Report State (proactive state reporting)"
+            />
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="isVirtualDevice"
+                  checked={device.isVirtualDevice}
+                  onChange={(e) => setDevice({ ...device, isVirtualDevice: e.target.checked })}
+                  color="primary"
+                />
+              }
+              label="Is Virtual Device (skip MQTT publish/report processing)"
             />
           </Box>
 
@@ -339,3 +375,4 @@ export default function AddDeviceForm({ onSaved, onBack, onDeleted, device: exis
     </Card>
   );
 }
+
