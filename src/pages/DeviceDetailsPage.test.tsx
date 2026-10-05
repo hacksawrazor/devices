@@ -120,4 +120,21 @@ describe('DeviceDetailsPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Device list' })).toBeInTheDocument();
   });
+
+  it('renders header and footer components', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ deviceId: 'lamp-7', name: 'Lamp', traits: [] }),
+    }) as unknown as typeof fetch;
+
+    render(
+      <MemoryRouter initialEntries={['/devices/lamp-7']}>
+        <Routes><Route path="/devices/:id" element={<DeviceDetailsPage />} /></Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
 });
+

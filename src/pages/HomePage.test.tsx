@@ -24,4 +24,11 @@ describe('HomePage', () => {
     render(<HomePage />);
     expect(screen.getByText(/Have a sharp idea/)).toBeInTheDocument();
   });
+
+  it('renders header and footer components', () => {
+    render(<HomePage />);
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
 });
+

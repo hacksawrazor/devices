@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import { Add, BuildOutlined, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { urls } from '../config/urls';
 import type { DeviceRecord } from '../components/AddDeviceForm';
 import { getDeviceApiHeaders } from '../utils/deviceApi';
@@ -67,7 +69,9 @@ export default function DevicesPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 6, md: 10 }, minHeight: '65vh' }}>
+    <>
+      <Header />
+      <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 6, md: 10 }, minHeight: '65vh' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'start', sm: 'end' }, gap: 3, mb: 5, flexDirection: { xs: 'column', sm: 'row' } }}>
         <Box>
           <Typography sx={{ color: '#b8f34a', fontSize: '.78rem', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 700, mb: 2 }}>
@@ -158,6 +162,8 @@ export default function DevicesPage() {
         </Box>
       )}
 
-    </Box>
+      </Box>
+      <Footer />
+    </>
   );
 }

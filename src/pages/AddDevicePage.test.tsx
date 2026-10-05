@@ -24,4 +24,15 @@ describe('AddDevicePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Device list' })).toBeInTheDocument();
   });
+
+  it('renders header and footer components', () => {
+    render(
+      <MemoryRouter>
+        <AddDevicePage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
 });
+

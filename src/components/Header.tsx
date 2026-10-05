@@ -1,0 +1,172 @@
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { Box, Typography, Button, Link, Avatar, Tooltip, Menu, MenuItem } from '@mui/material';
+import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
+import { Link as RouterLink, useInRouterContext } from 'react-router-dom';
+import { urls } from '../config/urls';
+import { getLoginUrl } from '../utils/getLoginUrl';
+import { isAuthenticated, type AuthenticatedUser } from '../utils/isAuthenticated';
+import { getDevelopmentUser, isDevelopmentAuthEnabled } from '../../dev/developmentAuth';
+import { useAuth } from './authContext';
+
+export interface HeaderProps {
+  userInfo?: AuthenticatedUser | null;
+  developmentAuthEnabled?: boolean;
+  onDevSignIn?: () => void;
+  onDevSignOut?: () => void;
+  setUserInfo?: (user: AuthenticatedUser | null) => void;
+}
+
+function HeaderLink({ to, underline, sx, children }: { to: string; underline?: 'none' | 'hover' | 'always'; sx?: object; children: ReactNode }) {
+  const inRouter = useInRouterContext();
+  if (inRouter) {
+    return (
+      <Link component={RouterLink} to={to} underline={underline} sx={sx}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <Link href={to} underline={underline} sx={sx}>
+      {children}
+    </Link>
+  );
+}
+
+function HeaderNavLink({ to, style, children }: { to: string; style?: CSSProperties; children: ReactNode }) {
+  const inRouter = useInRouterContext();
+  if (inRouter) {
+    return <RouterLink to={to} style={style}>{children}</RouterLink>;
+  }
+  return <a href={to} style={style}>{children}</a>;
+}
+
+function HeaderMenuItem({ to, onClick, sx, children }: { to: string; onClick: () => void; sx?: object; children: ReactNode }) {
+  const inRouter = useInRouterContext();
+  if (inRouter) {
+    return (
+      <MenuItem component={RouterLink} to={to} onClick={onClick} sx={sx}>
+        {children}
+      </MenuItem>
+    );
+  }
+  return (
+    <MenuItem component="a" href={to} onClick={onClick} sx={sx}>
+      {children}
+    </MenuItem>
+  );
+}
+
+export default function Header(props?: HeaderProps) {
+  const auth = useAuth();
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const userInfo = props?.userInfo !== undefined ? props.userInfo : auth.userInfo;
+  const developmentAuthEnabled = props?.developmentAuthEnabled !== undefined
+    ? props.developmentAuthEnabled
+    : (auth.developmentAuthEnabled ?? isDevelopmentAuthEnabled());
+  const userEmail = userInfo?.email ?? null;
+
+  const handleDevSignIn = () => {
+    if (props?.onDevSignIn) {
+      props.onDevSignIn();
+    } else if (props?.setUserInfo) {
+      props.setUserInfo(getDevelopmentUser());
+    } else if (auth.onDevSignIn) {
+      auth.onDevSignIn();
+    } else {
+      auth.setUserInfo(getDevelopmentUser());
+    }
+  };
+
+  const handleDevSignOut = () => {
+    if (props?.onDevSignOut) {
+      props.onDevSignOut();
+    } else if (props?.setUserInfo) {
+      props.setUserInfo(null);
+    } else if (auth.onDevSignOut) {
+      auth.onDevSignOut();
+    } else {
+      auth.setUserInfo(null);
+    }
+  };
+
+  return (
+    <Box component="header" sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <HeaderLink to="/" underline="none" sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.2, color: '#f4f7ef' }}>
+        <AutoAwesome sx={{ color: '#b8f34a' }} />
+        <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
+      </HeaderLink>
+      <Button
+        aria-label="Open navigation"
+        aria-controls={mobileMenuAnchor ? 'mobile-navigation-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={mobileMenuAnchor ? 'true' : undefined}
+        onClick={(event) => setMobileMenuAnchor(event.currentTarget)}
+        sx={{ display: { xs: 'inline-flex', md: 'none' }, alignItems: 'center', gap: 1.2, color: '#f4f7ef', minWidth: 0, px: 0, '&:hover': { bgcolor: 'transparent', boxShadow: 'none' } }}
+      >
+        <AutoAwesome sx={{ color: '#b8f34a' }} />
+        <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
+      </Button>
+      <Box component="nav" sx={{ display: { xs: 'none', md: 'flex' }, gap: 4 }}>
+        {isAuthenticated(userInfo) && (
+          <HeaderNavLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</HeaderNavLink>
+        )}
+        <HeaderLink to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Privacy</HeaderLink>
+        <HeaderLink to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>About</HeaderLink>
+      </Box>
+      <Menu
+        id="mobile-navigation-menu"
+        anchorEl={mobileMenuAnchor}
+        open={Boolean(mobileMenuAnchor)}
+        onClose={() => setMobileMenuAnchor(null)}
+        slotProps={{ paper: { sx: { minWidth: 200, bgcolor: '#181d1b', border: '1px solid rgba(244,247,239,.14)' } } }}
+      >
+        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+          Home
+        </HeaderMenuItem>
+        {isAuthenticated(userInfo) && (
+          <HeaderMenuItem to="/devices" onClick={() => setMobileMenuAnchor(null)} sx={{ color: '#b8f34a' }}>
+            Devices
+          </HeaderMenuItem>
+        )}
+        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+          Privacy
+        </HeaderMenuItem>
+        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
+          About
+        </HeaderMenuItem>
+      </Menu>
+      {isAuthenticated(userInfo) ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Tooltip title={userEmail} arrow>
+            <Avatar aria-label={`Signed in as ${userEmail}`} sx={{ width: 36, height: 36, bgcolor: '#b8f34a', color: '#101312', fontSize: '.85rem', fontWeight: 700, cursor: 'default' }}>
+              {(userEmail || '').replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()}
+            </Avatar>
+          </Tooltip>
+          <Button
+            href={developmentAuthEnabled ? undefined : urls.logout}
+            onClick={developmentAuthEnabled ? handleDevSignOut : undefined}
+            variant="outlined"
+            endIcon={<ArrowOutward />}
+            sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}
+          >
+            {developmentAuthEnabled ? 'Sign out (dev)' : 'Logout'}
+          </Button>
+        </Box>
+      ) : (
+        developmentAuthEnabled ? (
+          <Button
+            onClick={handleDevSignIn}
+            variant="outlined"
+            endIcon={<ArrowOutward />}
+            sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}
+          >
+            Sign in (dev)
+          </Button>
+        ) : (
+          <Button href={getLoginUrl()} variant="outlined" endIcon={<ArrowOutward />} sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}>Login</Button>
+        )
+      )}
+    </Box>
+  );
+}

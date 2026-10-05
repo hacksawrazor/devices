@@ -137,4 +137,13 @@ describe('DevicesPage', () => {
     const buttons = await screen.findAllByRole('link', { name: 'Add device' });
     expect(buttons[0]).toHaveAttribute('href', '/devices/new');
   });
+
+  it('renders header and footer components', async () => {
+    mockFetch(jest.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+    render(<MemoryRouter><DevicesPage /></MemoryRouter>);
+
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
 });
+

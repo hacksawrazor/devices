@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Box, Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import AddDeviceForm, { type DeviceRecord } from '../components/AddDeviceForm';
 import { urls } from '../config/urls';
 import { getDeviceApiHeaders } from '../utils/deviceApi';
@@ -44,23 +46,27 @@ export default function DeviceDetailsPage() {
   }, [id, showFeedback]);
 
   return (
-    <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 4, md: 7 }, minHeight: '65vh' }}>
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress color="primary" /></Box>
-      ) : error || !device ? (
-        <Box sx={{ maxWidth: 960, mx: 'auto', mt: 4 }}>
-          <Button onClick={() => navigate('/devices')} startIcon={<ArrowBack />} sx={{ color: 'rgba(244,247,239,.62)' }}>
-            Back to devices
-          </Button>
-        </Box>
-      ) : (
-        <AddDeviceForm
-          device={device}
-          onBack={() => navigate('/devices')}
-          onSaved={() => navigate('/devices')}
-          onDeleted={() => navigate('/devices')}
-        />
-      )}
-    </Box>
+    <>
+      <Header />
+      <Box sx={{ maxWidth: 1240, mx: 'auto', px: { xs: 3, md: 6 }, py: { xs: 4, md: 7 }, minHeight: '65vh' }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress color="primary" /></Box>
+        ) : error || !device ? (
+          <Box sx={{ maxWidth: 960, mx: 'auto', mt: 4 }}>
+            <Button onClick={() => navigate('/devices')} startIcon={<ArrowBack />} sx={{ color: 'rgba(244,247,239,.62)' }}>
+              Back to devices
+            </Button>
+          </Box>
+        ) : (
+          <AddDeviceForm
+            device={device}
+            onBack={() => navigate('/devices')}
+            onSaved={() => navigate('/devices')}
+            onDeleted={() => navigate('/devices')}
+          />
+        )}
+      </Box>
+      <Footer />
+    </>
   );
 }
