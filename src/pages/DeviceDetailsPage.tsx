@@ -60,9 +60,9 @@ export default function DeviceDetailsPage() {
         ) : (
           <AddDeviceForm
             device={device}
-            onBack={() => navigate('/devices')}
-            onSaved={() => navigate('/devices')}
-            onDeleted={() => navigate('/devices')}
+            onBack={() => navigate('/')}
+            onSaved={() => navigate('/')}
+            onDeleted={() => navigate('/')}
           />
         )}
       </Box>

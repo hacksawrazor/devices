@@ -1,5 +1,5 @@
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import ThreeBackground from './components/ThreeBackground';
 import AddDevicePage from './pages/AddDevicePage';
@@ -100,6 +100,7 @@ export default function App() {
                   <Route path="/devices/new" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><AddDevicePage /></AuthenticatedRoute>} />
                   <Route path="/devices/:id" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><DeviceDetailsPage /></AuthenticatedRoute>} />
                   <Route path="/" element={<AuthenticatedRoute loading={authLoading} user={userInfo}><DevicesPage /></AuthenticatedRoute>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Box>
             </Box>
