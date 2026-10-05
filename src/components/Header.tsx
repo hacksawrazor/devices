@@ -1,5 +1,5 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Box, Typography, Button, Link, Avatar, Tooltip, Menu, MenuItem } from '@mui/material';
+import { useState, type ReactNode } from 'react';
+import { Box, Typography, Button, Link, Avatar, Tooltip, Menu } from '@mui/material';
 import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
 import { Link as RouterLink, useInRouterContext } from 'react-router-dom';
 import { urls } from '../config/urls';
@@ -29,30 +29,6 @@ function HeaderLink({ to, underline, sx, children }: { to: string; underline?: '
     <Link href={to} underline={underline} sx={sx}>
       {children}
     </Link>
-  );
-}
-
-function HeaderNavLink({ to, style, children }: { to: string; style?: CSSProperties; children: ReactNode }) {
-  const inRouter = useInRouterContext();
-  if (inRouter) {
-    return <RouterLink to={to} style={style}>{children}</RouterLink>;
-  }
-  return <a href={to} style={style}>{children}</a>;
-}
-
-function HeaderMenuItem({ to, onClick, sx, children }: { to: string; onClick: () => void; sx?: object; children: ReactNode }) {
-  const inRouter = useInRouterContext();
-  if (inRouter) {
-    return (
-      <MenuItem component={RouterLink} to={to} onClick={onClick} sx={sx}>
-        {children}
-      </MenuItem>
-    );
-  }
-  return (
-    <MenuItem component="a" href={to} onClick={onClick} sx={sx}>
-      {children}
-    </MenuItem>
   );
 }
 
@@ -107,13 +83,6 @@ export default function Header(props?: HeaderProps) {
         <AutoAwesome sx={{ color: '#b8f34a' }} />
         <Typography sx={{ fontWeight: 700, fontSize: '1.2rem' }}>Hacksaw</Typography>
       </Button>
-      <Box component="nav" sx={{ display: { xs: 'none', md: 'flex' }, gap: 4 }}>
-        {isAuthenticated(userInfo) && (
-          <HeaderNavLink to="/devices" style={{ color: '#b8f34a', textDecoration: 'none', fontWeight: 600 }}>Devices</HeaderNavLink>
-        )}
-        <HeaderLink to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>Privacy</HeaderLink>
-        <HeaderLink to="/" sx={{ color: 'rgba(244,247,239,.7)', textDecoration: 'none' }}>About</HeaderLink>
-      </Box>
       <Menu
         id="mobile-navigation-menu"
         anchorEl={mobileMenuAnchor}
@@ -121,20 +90,6 @@ export default function Header(props?: HeaderProps) {
         onClose={() => setMobileMenuAnchor(null)}
         slotProps={{ paper: { sx: { minWidth: 200, bgcolor: '#181d1b', border: '1px solid rgba(244,247,239,.14)' } } }}
       >
-        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
-          Home
-        </HeaderMenuItem>
-        {isAuthenticated(userInfo) && (
-          <HeaderMenuItem to="/devices" onClick={() => setMobileMenuAnchor(null)} sx={{ color: '#b8f34a' }}>
-            Devices
-          </HeaderMenuItem>
-        )}
-        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
-          Privacy
-        </HeaderMenuItem>
-        <HeaderMenuItem to="/" onClick={() => setMobileMenuAnchor(null)} sx={{ color: 'rgba(244,247,239,.8)' }}>
-          About
-        </HeaderMenuItem>
       </Menu>
       {isAuthenticated(userInfo) ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
