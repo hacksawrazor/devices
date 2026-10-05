@@ -3,6 +3,7 @@ import { getRuntimeEnvironment } from './runtimeEnvironment';
 const ssoBaseUrl = 'https://sso.hacksaw.in';
 
 export const urls = {
+  home: 'https://hacksaw.in',
   devicesApi: getRuntimeEnvironment().devicesApiUrl,
   userInfo: `${ssoBaseUrl}/oauth2/userinfo`,
   login: `${ssoBaseUrl}/oauth2/sign_in`,

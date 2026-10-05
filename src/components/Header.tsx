@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Box, Typography, Button, Link, Avatar, Tooltip, Menu } from '@mui/material';
-import { AutoAwesome, ArrowOutward } from '@mui/icons-material';
+import { Box, Typography, Button, Link, Avatar, Tooltip, Menu, IconButton, MenuItem, ListSubheader } from '@mui/material';
+import { AutoAwesome, ArrowOutward, AccountCircle, Logout } from '@mui/icons-material';
 import { Link as RouterLink, useInRouterContext } from 'react-router-dom';
 import { urls } from '../config/urls';
 import { getLoginUrl } from '../utils/getLoginUrl';
@@ -35,6 +35,7 @@ function HeaderLink({ to, underline, sx, children }: { to: string; underline?: '
 export default function Header(props?: HeaderProps) {
   const auth = useAuth();
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
+  const [avatarMenuAnchor, setAvatarMenuAnchor] = useState<HTMLElement | null>(null);
 
   const userInfo = props?.userInfo !== undefined ? props.userInfo : auth.userInfo;
   const developmentAuthEnabled = props?.developmentAuthEnabled !== undefined
@@ -93,20 +94,67 @@ export default function Header(props?: HeaderProps) {
       </Menu>
       {isAuthenticated(userInfo) ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, position: 'relative' }}>
           <Tooltip title={userEmail} arrow>
-            <Avatar aria-label={`Signed in as ${userEmail}`} sx={{ width: 36, height: 36, bgcolor: '#b8f34a', color: '#101312', fontSize: '.85rem', fontWeight: 700, cursor: 'default' }}>
-              {(userEmail || '').replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()}
-            </Avatar>
+            <IconButton
+              aria-label="account menu"
+              onClick={(event) => setAvatarMenuAnchor(event.currentTarget)}
+              sx={{ p: 0 }}
+            >
+              <Avatar
+                aria-label={`Signed in as ${userEmail}`}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  bgcolor: avatarMenuAnchor ? '#d4ff6a' : '#b8f34a',
+                  color: '#101312',
+                  fontSize: '.85rem',
+                  fontWeight: 700,
+                  cursor: 'default',
+                  transition: 'background-color 0.2s',
+                  boxShadow: avatarMenuAnchor ? '0 0 8px rgba(184,243,74,0.5)' : 'none'
+                }}
+              >
+                {(userEmail || '').replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()}
+              </Avatar>
+            </IconButton>
           </Tooltip>
-          <Button
-            href={developmentAuthEnabled ? undefined : urls.logout}
-            onClick={developmentAuthEnabled ? handleDevSignOut : undefined}
-            variant="outlined"
-            endIcon={<ArrowOutward />}
-            sx={{ borderColor: 'rgba(244,247,239,.35)', color: '#f4f7ef', px: 2.5 }}
-          >
-            {developmentAuthEnabled ? 'Sign out (dev)' : 'Logout'}
-          </Button>
+
+        </Box>
+        <Menu
+          id="avatar-menu"
+          anchorEl={avatarMenuAnchor}
+          open={Boolean(avatarMenuAnchor)}
+          onClose={() => setAvatarMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          slotProps={{ paper: { sx: { minWidth: 150, bgcolor: '#181d1b', border: '1px solid rgba(244,247,239,.14)', marginTop: 1 } } }}
+        >
+          <ListSubheader sx={{ backgroundColor: 'inherit', display: 'flex', alignItems: 'center'}} >
+            <AccountCircle sx={{ mr: 1, color: '#b8f34a' }} />
+            {userEmail}
+          </ListSubheader>
+          <MenuItem component="a" href={urls.home} onClick={() => setAvatarMenuAnchor(null)}>
+            <AutoAwesome sx={{ mr: 1, color: '#b8f34a' }} />
+            Home
+          </MenuItem>
+          {developmentAuthEnabled ? (
+            <MenuItem
+              onClick={() => {
+                handleDevSignOut();
+                setAvatarMenuAnchor(null);
+              }}
+            >
+              <Logout sx={{ mr: 1, color: '#b8f34a' }} />
+              Sign out (dev)
+            </MenuItem>
+          ) : (
+            <MenuItem component="a" href={urls.logout} onClick={() => setAvatarMenuAnchor(null)}>
+              <Logout sx={{ mr: 1, color: '#b8f34a' }} />
+              Logout
+            </MenuItem>
+          )}
+        </Menu>
         </Box>
       ) : (
         developmentAuthEnabled ? (
