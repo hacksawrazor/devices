@@ -55,6 +55,8 @@ describe('DevicesPage', () => {
     expect(screen.getByText('Brightness')).toBeInTheDocument();
     expect(screen.getByText('On')).toBeInTheDocument();
     expect(screen.getByText('Off')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Desk lamp current state' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Entry switch current state' })).not.toBeChecked();
     expect(screen.getByText('Reports state proactively')).toBeInTheDocument();
     const editLink = screen.getByRole('link', { name: 'Edit Desk lamp' });
     expect(editLink).toHaveAttribute('href', '/devices/lamp-1');

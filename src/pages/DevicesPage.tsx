@@ -6,13 +6,12 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  FormControlLabel,
   IconButton,
   Switch,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Add, BuildOutlined, DevicesOther, Refresh } from '@mui/icons-material';
+import { Add, Settings, DevicesOther, Refresh } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -133,18 +132,7 @@ export default function DevicesPage() {
                   {device.willReportState ? 'Reports state proactively' : 'State reporting disabled'}
                 </Typography>
               </CardContent>
-              <Box sx={{ px: 2, pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      checked={Boolean(device.currentState?.on)}
-                      disabled={loading || togglingDeviceIds.has(device.deviceId)}
-                      onChange={() => void toggleDeviceState(device)}
-                      slotProps={{ input: { 'aria-label': `${device.name} current state` } }}
-                    />
-                  )}
-                  label={device.currentState?.on ? 'On' : 'Off'}
-                />
+              <Box sx={{ px: 2, pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Tooltip title={`Edit ${device.name}`}>
                   <IconButton
                     component={RouterLink}
@@ -153,8 +141,17 @@ export default function DevicesPage() {
                     size="small"
                     sx={{ color: 'rgba(244,247,239,.72)', '&:hover': { color: '#b8f34a' } }}
                   >
-                    <BuildOutlined fontSize="small" />
+                    <Settings fontSize="small" />
                   </IconButton>
+                </Tooltip>
+                <Tooltip title={`${device.name} ${device.currentState?.on ? 'On' : 'Off'}`}>
+                  <Switch
+                    checked={Boolean(device.currentState?.on)}
+                    disabled={loading || togglingDeviceIds.has(device.deviceId)}
+                    onChange={() => void toggleDeviceState(device)}
+                    slotProps={{ input: { 'aria-label': `${device.name} current state` } }}
+                    size="small"
+                  />
                 </Tooltip>
               </Box>
             </Card>
